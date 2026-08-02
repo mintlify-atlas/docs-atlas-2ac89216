@@ -1,0 +1,240 @@
+---
+title: "TimelineMilestones: Animated Vertical Career Timeline"
+sidebarTitle: "Timeline Milestones"
+description: "TimelineMilestones renders alternating left/right milestone cards along a vertical cyan gradient line, each animating into view with Framer Motion's whileInView."
+---
+
+`TimelineMilestones` constructs the narrative spine of the `/about` page. Five milestone cards representing distinct career chapters are laid out alternately left and right of a vertical cyan gradient line. As the user scrolls down, each card slides in from its side using Framer Motion's `whileInView` — giving the timeline a reveal-as-you-scroll feel that suits the portfolio's dark-retro aesthetic. Year labels float beside each card connector dot as understated navigation anchors.
+
+## Milestone Component Exports
+
+Five named milestone components are exported from `TimelineMilestones.js`. Each encapsulates the visual design for one career chapter:
+
+| Export | Internal name | Year     | Theme / style |
+|--------|---------------|----------|---------------|
+| `fe`   | `P`           | 2018     | Polaroid-style photo card, rotated, healthcare imagery |
+| `he`   | `S`           | 2020     | Yellow sticky-note card, retail & merchandising list |
+| `ge`   | `F`           | 2021     | Slate card with 3-D perspective tilt, "The Curiosity Spark" |
+| `ye`   | `a`           | 2022     | Dark terminal error card, "Transitioning to Code" |
+| `ve`   | `b`           | Present  | Neon-lime recipe card, "Developer Potion" |
+
+### Past Life: Healthcare (`fe` / `P`)
+
+```jsx
+<motion.div
+  whileHover={{ scale: 1.05, rotate: -2 }}
+  className="bg-[#e2e8f0] p-4 pb-12 shadow-xl rounded-sm rotate-2 max-w-xs relative"
+>
+  {/* Square image area with unsplash photo, luminosity blend + purple overlay */}
+  <div className="aspect-square bg-slate-800 mb-4 overflow-hidden relative">
+    <div className="absolute inset-0 bg-[url('...')] bg-cover opacity-60 mix-blend-luminosity" />
+    <div className="absolute inset-0 bg-electric-purple/20 mix-blend-overlay" />
+  </div>
+  <p className="font-display text-slate-800 text-xl text-center">Past Life: Healthcare</p>
+  {/* Red tape strip at top */}
+  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-8 h-3 bg-red-500/50 rotate-[-5deg] shadow-sm" />
+</motion.div>
+```
+
+### Retail & Merchandising (`he` / `S`)
+
+```jsx
+<motion.div
+  whileHover={{ scale: 1.05 }}
+  className="bg-yellow-200 p-6 shadow-md -rotate-3 max-w-xs relative font-mono text-slate-800"
+>
+  <div className="absolute top-0 left-0 w-full h-8 bg-black/5" /> {/* tape strip */}
+  <h4 className="font-bold mb-2">Retail & Merchandising</h4>
+  <ul className="list-disc pl-4 space-y-1 text-sm">
+    <li>Organized chaos</li>
+    <li>Dealt with humans</li>
+    <li>Learned patience</li>
+  </ul>
+</motion.div>
+```
+
+### The Curiosity Spark (`ge` / `F`)
+
+```jsx
+<motion.div
+  whileHover={{ scale: 1.05, rotateX: 10 }}
+  style={{ transformStyle: "preserve-3d" }}
+  className="bg-slate-300 p-6 shadow-lg max-w-xs relative border-t-8 border-electric-purple"
+>
+  <div className="absolute inset-0 opacity-10 bg-[url('...cubes.png')]" />
+  <h4 className="font-display text-xl text-slate-900 mb-2">The Curiosity Spark</h4>
+  <p className="font-mono text-sm text-slate-700 italic">
+    "What if I could build the tools instead of just using them?"
+  </p>
+</motion.div>
+```
+
+### Transitioning to Code (`ye` / `a`)
+
+```jsx
+<motion.div
+  whileHover={{ scale: 1.02 }}
+  className="bg-[#0a0a0a] border border-red-500/30 p-4 rounded max-w-sm
+             font-mono text-xs text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+>
+  <div className="text-slate-400 mb-2">// Transitioning to Code</div>
+  <div>Uncaught Error: Reality.exe stopped working</div>
+  <div className="pl-4 text-slate-500">
+    at Career.pivot (life.js:42)<br />
+    at Bootcamp.init (learning.js:101)<br />
+    at Self.discover (mind.js:666)
+  </div>
+</motion.div>
+```
+
+### Developer Potion (`ve` / `b`) — Present
+
+```jsx
+<motion.div
+  whileHover={{ scale: 1.05 }}
+  className="border border-neon-lime/50 bg-deep-void/80 p-6 rounded-lg
+             max-w-xs relative backdrop-blur-sm"
+>
+  <h4 className="font-display text-xl text-neon-lime mb-4 border-b border-neon-lime/30 pb-2">
+    Developer Potion
+  </h4>
+  <ul className="font-mono text-sm text-slate-300 space-y-2">
+    <li className="flex justify-between"><span>Tears of frustration</span> <span>2 drops</span></li>
+    <li className="flex justify-between"><span>StackOverflow tabs</span>  <span>42 ea</span></li>
+    <li className="flex justify-between"><span>Caffeine extract</span>    <span>1 gal</span></li>
+    <li className="flex justify-between"><span>"Aha!" moments</span>      <span>Priceless</span></li>
+  </ul>
+</motion.div>
+```
+
+## Timeline Data Array
+
+The About page (`dt()` in `main.js`) assembles the five milestone exports into a data array consumed by the layout loop:
+
+```js
+const entries = [
+  { component: <fe />, align: "left",  year: "2018"    },
+  { component: <he />, align: "right", year: "2020"    },
+  { component: <ge />, align: "left",  year: "2021"    },
+  { component: <ye />, align: "right", year: "2022"    },
+  { component: <ve />, align: "left",  year: "Present" },
+]
+```
+
+## Layout Structure
+
+### Vertical line
+
+A single `div` absolutely positioned at the horizontal centre creates the continuous timeline spine:
+
+```html
+<div class="absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2
+            bg-gradient-to-b from-transparent via-cyan to-transparent
+            shadow-[0_0_10px_var(--cyan)]">
+```
+
+The gradient fades in from the top and out at the bottom, framing the timeline as a contained column of light.
+
+### Connector dot
+
+A small circle is centred on the line at the vertical midpoint of each row:
+
+```html
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+            w-4 h-4 rounded-full bg-void border-2 border-cyan
+            shadow-[0_0_10px_var(--cyan)] z-10">
+```
+
+### Card column
+
+Each entry occupies half the row width (`w-1/2`) with internal padding that accounts for the centre line:
+
+```html
+<!-- Left-aligned entry -->
+<div class="w-1/2 pr-12 flex justify-end">
+
+<!-- Right-aligned entry -->
+<div class="w-1/2 pl-12 flex justify-start">
+```
+
+### Year label
+
+The year string is positioned absolutely, poking out from the card toward the timeline line:
+
+```jsx
+// Left card: year floats to its right
+<div className="absolute top-1/2 -translate-y-1/2 -right-8
+                font-mono text-cyan text-sm font-bold opacity-50">
+  {year}
+</div>
+
+// Right card: year floats to its left
+<div className="absolute top-1/2 -translate-y-1/2 -left-8
+                font-mono text-cyan text-sm font-bold opacity-50">
+  {year}
+</div>
+```
+
+## Framer Motion Scroll Animation
+
+Each card wrapper is a `motion.div` that uses `whileInView` to trigger its entrance:
+
+```jsx
+<motion.div
+  initial={{ opacity: 0, x: align === "left" ? -50 : 50 }}
+  whileInView={{ opacity: 1, x: 0 }}
+  viewport={{ once: true, margin: "-100px" }}
+  transition={{ duration: 0.6, type: "spring" }}
+>
+  {milestone component}
+</motion.div>
+```
+
+| Property              | Value    | Effect |
+|-----------------------|----------|--------|
+| `initial.x`           | ±50      | Cards slide in from opposite sides of the centreline |
+| `viewport.once`       | `true`   | Animation fires only on first scroll-into-view |
+| `viewport.margin`     | `-100px` | Triggers 100 px before the element reaches the viewport edge |
+| `transition.type`     | `spring` | Gives the entrance a slight overshoot bounce |
+| `transition.duration` | `0.6`    | Controls spring settling time |
+
+<Note>
+  The `viewport.margin: "-100px"` inset means each card starts animating before it is fully visible. This overlapping reveal creates a cascading feel as the user scrolls — no card waits until it is entirely on-screen.
+</Note>
+
+## Color Tokens Used
+
+| Token               | Usage |
+|---------------------|-------|
+| `--cyan`            | Timeline line gradient, connector dot border/glow, year label text |
+| `--electric-purple` | Curiosity Spark card top border, glitch-title on page header |
+| `--void`            | Connector dot background |
+| `--neon-lime`       | Developer Potion card border, heading, and text |
+| `--deep-void`       | Developer Potion card background |
+
+## Page Composition
+
+The About page (`dt()`) wraps the timeline in a max-width container, preceded by an animated page heading and followed by `ThingsINotice`:
+
+```jsx
+// About page (main.js → dt())
+<div className="max-w-6xl mx-auto py-12">
+  <motion.h1 className="font-display text-5xl md:text-7xl text-electric-purple ...">
+    Origin Story
+  </motion.h1>
+
+  {/* Vertical timeline */}
+  <div className="relative">
+    <div className="absolute left-1/2 ...centreline..." />
+    <div className="space-y-24">
+      {entries.map(entry => <TimelineRow key={...} {...entry} />)}
+    </div>
+  </div>
+
+  <ThingsINotice />
+</div>
+```
+
+<Tip>
+  The `space-y-24` gap between rows gives the timeline generous breathing room. Reducing it below `space-y-16` risks the year labels from adjacent rows overlapping at narrow breakpoints.
+</Tip>

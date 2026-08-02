@@ -1,0 +1,157 @@
+---
+title: "BackgroundAtmosphere: Ambient Animated Backdrop"
+sidebarTitle: "Background Atmosphere"
+description: "BackgroundAtmosphere renders a fixed full-screen animated backdrop with glowing blobs and a starfield-style particle layer behind all page content."
+---
+
+`BackgroundAtmosphere` is a purely decorative, non-interactive component that fills the entire browser viewport with a continuously animated occult backdrop. It sits behind every other element on every page — a fixed canvas of slow-drifting radial gradient blobs, a low-opacity nebula texture, and a sparse layer of floating alchemical glyphs. Because it is `fixed` and `pointer-events-none`, it never intercepts clicks, scrolls, or keyboard events; it exists solely as atmosphere.
+
+## Positioning and Layering
+
+The component's outermost element uses three Tailwind utility classes that define all of its layout behaviour:
+
+```jsx
+<div className="fixed inset-0 z-[-1] overflow-hidden bg-void pointer-events-none">
+```
+
+| Class | Effect |
+|---|---|
+| `fixed inset-0` | Anchors the element to the full viewport, independent of document scroll |
+| `z-[-1]` | Places it below the default stacking context — behind every `z-0` or higher element |
+| `pointer-events-none` | Makes it fully invisible to mouse and touch input |
+| `bg-void` | Fills the base with `--void` (`#08060d`), the deepest background colour |
+| `overflow-hidden` | Clips the oversized animation blobs that extend beyond the viewport edges |
+
+## Layers
+
+The component renders four distinct visual layers stacked inside the root `div`.
+
+### Layer 1 — Nebula Texture
+
+A low-opacity (`opacity-20`) Unsplash galaxy photograph displayed with `mix-blend-screen`. Screen blending means only the bright parts of the image contribute to the composite — the dark areas of the photo vanish, leaving only luminous nebula streaks floating above the void background.
+
+```jsx
+<div
+  className="absolute inset-0 opacity-20 mix-blend-screen"
+  style={{
+    backgroundImage: "url('https://images.unsplash.com/photo-1534796636912-365f16515d11?q=80&w=2000&auto=format&fit=crop')",
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  }}
+/>
+```
+
+### Layer 2 — Deep Void Blob (Primary)
+
+A `motion.div` that is intentionally oversized (`-inset-[50%]` expands it to 200% of the container in every direction) so that its slow drift animation never reveals a hard edge. It animates on a 20-second infinite loop using `--deep-void` as a radial gradient that reinforces the dark centre of the composition.
+
+```jsx
+<motion.div
+  animate={{
+    x: ['-5%', '5%', '-5%'],
+    y: ['-5%', '5%', '-5%'],
+    scale: [1, 1.1, 1],
+  }}
+  transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
+  className="absolute -inset-[50%] opacity-30 blur-[120px]"
+  style={{
+    background: 'radial-gradient(circle at center, var(--deep-void) 0%, transparent 50%)',
+  }}
+/>
+```
+
+### Layer 3 — Electric Purple Bloom (Secondary)
+
+A second oversized blob that drifts in the opposite phase to the primary blob, positioned offset from centre (`top-[20%] left-[-20%]`). It uses `--electric-purple` as its radial gradient source and runs on a 25-second loop — the prime-number relationship to the 20-second primary loop means they never fall into a visible repeating pattern.
+
+```jsx
+<motion.div
+  animate={{
+    x: ['5%', '-5%', '5%'],
+    y: ['5%', '-5%', '5%'],
+    scale: [1.1, 1, 1.1],
+  }}
+  transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
+  className="absolute -inset-[50%] top-[20%] left-[-20%] opacity-20 blur-[100px]"
+  style={{
+    background: 'radial-gradient(circle at center, var(--electric-purple) 0%, transparent 40%)',
+  }}
+/>
+```
+
+### Layer 4 — Floating Alchemical Glyphs
+
+An array of 15 `motion.div` elements, each rendering a randomly selected alchemical symbol at a randomised starting position. Each glyph drifts continuously toward a new random `y` position while slowly rotating, with durations between 40 and 80 seconds. The entire layer runs at `opacity-[0.03]` — barely perceptible, but present.
+
+```jsx
+<div className="absolute inset-0 opacity-[0.03]">
+  {Array.from({ length: 15 }).map((_, i) => (
+    <motion.div
+      key={i}
+      className="absolute text-electric-purple font-display text-4xl"
+      initial={{
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        rotate: Math.random() * 360,
+      }}
+      animate={{
+        y: [null, Math.random() * window.innerHeight],
+        rotate: [null, Math.random() * 360 + 180],
+      }}
+      transition={{
+        duration: Math.random() * 40 + 40,
+        repeat: Infinity,
+        ease: 'linear',
+      }}
+    >
+      {['Δ', '∇', '⟁', '⨂', '⧋', '⎊'][Math.floor(Math.random() * 6)]}
+    </motion.div>
+  ))}
+</div>
+```
+
+The glyph set — `Δ ∇ ⟁ ⨂ ⧋ ⎊` — are the same symbols reused throughout the site's iconography (project tiles, case study section headings, etc.), reinforcing visual consistency between the background and foreground layers.
+
+## Usage in the Layout
+
+`BackgroundAtmosphere` is imported and rendered inside `AppShell` as the second child, immediately after `CustomCursor`:
+
+```jsx
+import { BackgroundAtmosphere } from '../components/BackgroundAtmosphere.js';
+
+function AppShell({ children }) {
+  return (
+    <div className="min-h-screen ...">
+      <CustomCursor />
+      <BackgroundAtmosphere />  {/* ← renders behind everything */}
+      <header>...</header>
+      <AnimatePresence>...</AnimatePresence>
+    </div>
+  );
+}
+```
+
+Because it is `fixed` and `z-[-1]`, the component requires no special CSS on sibling elements — any element with the default `z-index: auto` or higher will naturally appear in front of it.
+
+## Customising the Effect
+
+All colours in `BackgroundAtmosphere` reference CSS custom properties defined in `:root` inside `main.css`. Changing these variables propagates to both the background and all foreground components that share the same tokens.
+
+```css
+:root {
+  --void:           #08060d;   /* base background fill */
+  --deep-void:      #13091f;   /* primary blob gradient */
+  --electric-purple: #a855f7;  /* secondary blob + glyph colour */
+  --neon-lime:      #a3ff12;
+  --magenta:        #ff2bd6;
+  --cyan:           #22d3ee;
+}
+```
+
+<Tip>
+To make the atmosphere more energetic, reduce the `duration` values on the two `motion.div` blobs (e.g., `10` and `13` seconds) and increase `opacity-30` / `opacity-20` slightly. To make it more subtle, increase the durations and lower the opacities. Avoid making both blobs drift in the same phase — counter-phase motion (the current setup) prevents the background from feeling mechanical.
+</Tip>
+
+<Note>
+The glyph layer initialises its positions using `Math.random() * window.innerWidth` and `Math.random() * window.innerHeight` at component mount time. Positions are therefore randomised per page load but are not re-randomised on re-renders. This is intentional — the glyphs should feel like they drifted in from offscreen, not that they teleport on every navigation.
+</Note>

@@ -1,0 +1,220 @@
+---
+title: "CardsOfFate: Tarot-Style Interactive Project Cards"
+sidebarTitle: "Cards of Fate"
+description: "CardsOfFate renders a set of tarot-inspired cards on the home page, each showcasing a featured project with hover flip or reveal animations via Framer Motion."
+---
+
+`CardsOfFate` is the home page's central navigation device, dressed up as a tarot reading. Each card represents a section of the portfolio — Projects, About, Skills, Writing, Case Studies, and Contact — and is styled with occult iconography, corner rune markers, and 3-D perspective hover effects. The component bridges the atmospheric opening sequence (the summoning circle and hero text) with the rest of the site.
+
+## Visual Role on the Home Page
+
+`CardsOfFate` renders **third** in the home page stack, appearing below `HeroText` after the name and tagline animations have concluded. It draws the eye downward and provides the primary call-to-action for first-time visitors. Each card is a `<Link>` component from React Router, making the entire card surface a navigation target.
+
+**Home page render order:**
+
+| Position | Component |
+|---|---|
+| 1 | `SummoningCircle` |
+| 2 | `HeroText` |
+| **3** | **`CardsOfFate`** |
+| 4 | `TerminalStatus` |
+| 5 | `ProjectMarquee` |
+
+## Props
+
+`CardsOfFate` accepts no props. The navigation destinations and their metadata are defined as a static array inside the component:
+
+```jsx
+const navItems = [
+  { title: "Projects",     path: "/projects",     icon: "⟁", desc: "Suspiciously organized files" },
+  { title: "About",        path: "/about",         icon: "⎊", desc: "Origin story & timeline" },
+  { title: "Skills",       path: "/skills",        icon: "⨂", desc: "Languages I speak to machines" },
+  { title: "Writing",      path: "/writing",       icon: "Δ",  desc: "Translated for humans" },
+  { title: "Case Studies", path: "/case-studies",  icon: "∇",  desc: "Bug boss battles" },
+  { title: "Contact",      path: "/contact",       icon: "⧋", desc: "Send a raven" },
+];
+```
+
+<Note>
+  To add, remove, or reorder cards, edit the `navItems` array directly in `CardsOfFate.js`. The grid layout is responsive and adapts automatically from 1 to 3 columns.
+</Note>
+
+## Framer Motion Animations
+
+### Scroll-triggered card entrance
+
+Each card uses `whileInView` to animate in from below as the user scrolls:
+
+```jsx
+// motion.div — per card
+initial={{ opacity: 0, y: 50 }}
+whileInView={{ opacity: 1, y: 0 }}
+viewport={{ once: true }}
+transition={{
+  delay: index * 0.1,   // staggered: card 0 at 0 s, card 5 at 0.5 s
+  duration: 0.6,
+}}
+```
+
+`viewport: { once: true }` means the entrance animation plays exactly once. Cards that have already animated in do not reset if the user scrolls up and back down.
+
+### 3-D hover effect
+
+On pointer entry, each card lifts and tilts in 3-D space, and a purple box-shadow glow expands:
+
+```jsx
+whileHover={{
+  scale: 1.05,
+  rotateY: 10,
+  rotateX: -10,
+  boxShadow: "0 0 30px rgba(168, 85, 247, 0.4)",
+}}
+style={{ transformStyle: "preserve-3d" }}
+```
+
+The `transformStyle: "preserve-3d"` inline style is required for the `rotateX`/`rotateY` values to produce a genuine perspective tilt rather than a flat CSS transform.
+
+## CSS Classes and Color Tokens
+
+### Section container
+
+```css
+relative z-10 py-24
+```
+
+### Grid wrapper
+
+```css
+grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto
+```
+
+### Per-card `motion.div`
+
+```css
+group relative h-64 rounded-xl
+border border-electric-purple/30
+bg-deep-void/80 backdrop-blur-sm
+p-6
+flex flex-col items-center justify-center text-center
+overflow-hidden
+transition-colors hover:border-electric-purple
+```
+
+On hover, the border color transitions from `electric-purple/30` (30 % opacity) to full `electric-purple`, making the card boundary visibly sharpen.
+
+### Section heading
+
+```css
+font-display text-3xl md:text-4xl text-center
+text-magenta glow-text-purple
+mb-16
+```
+
+### Card icon
+
+```css
+text-5xl text-electric-purple mb-4
+group-hover:text-cyan
+group-hover:drop-shadow-[0_0_10px_var(--cyan)]
+transition-colors
+```
+
+On hover the icon colour cross-fades from `electric-purple` to `cyan` with a cyan `drop-shadow` glow, giving the impression the symbol has been activated.
+
+### Card title
+
+```css
+font-display text-2xl text-slate-200 mb-2
+group-hover:text-white
+```
+
+### Card description
+
+```css
+font-mono text-sm text-slate-500
+group-hover:text-slate-300
+```
+
+### Decorative corner runes
+
+Each card has four `<div>` corner accents — top-left, top-right, bottom-left, bottom-right — that draw partial border brackets:
+
+```css
+/* top-left corner */
+absolute top-2 left-2 w-4 h-4 border-t border-l border-electric-purple/50
+
+/* top-right corner */
+absolute top-2 right-2 w-4 h-4 border-t border-r border-electric-purple/50
+
+/* bottom-left corner */
+absolute bottom-2 left-2 w-4 h-4 border-b border-l border-electric-purple/50
+
+/* bottom-right corner */
+absolute bottom-2 right-2 w-4 h-4 border-b border-r border-electric-purple/50
+```
+
+### Background dot grid overlay
+
+A `radial-gradient` CSS background creates a subtle polka-dot pattern inside each card at 10 % opacity:
+
+```css
+absolute inset-0 opacity-10
+bg-[radial-gradient(circle_at_center,var(--electric-purple)_1px,transparent_1px)]
+bg-[size:10px_10px]
+```
+
+## Interactive Behaviour
+
+| Interaction | Effect |
+|---|---|
+| Hover | Scale up (`1.05×`), 3-D tilt (`rotateY: 10°`, `rotateX: -10°`), border brightens, icon turns cyan, description text lightens, purple glow expands |
+| Click / tap | Navigates to the card's `path` via React Router `<Link>` |
+| Scroll into view | Cards animate in from `y: 50` with a 0.1 s stagger per card |
+
+<Tip>
+  The cards use `cursor-none` is not applied here — the custom cursor from `CustomCursor.js` is active site-wide. The card interaction area is the full `h-64` card surface.
+</Tip>
+
+## Usage Example
+
+```jsx
+import { CardsOfFate } from "../components/home/CardsOfFate";
+
+function HomePage() {
+  return (
+    <div className="relative w-full">
+      <SummoningCircle />
+      <HeroText />
+      <CardsOfFate />   {/* ← renders here */}
+      <TerminalStatus />
+      <ProjectMarquee />
+    </div>
+  );
+}
+```
+
+<CodeGroup>
+```jsx Individual card structure
+<Link to={item.path}>
+  <motion.div
+    initial={{ opacity: 0, y: 50 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ delay: index * 0.1, duration: 0.6 }}
+    whileHover={{
+      scale: 1.05,
+      rotateY: 10,
+      rotateX: -10,
+      boxShadow: "0 0 30px rgba(168, 85, 247, 0.4)",
+    }}
+    className="group relative h-64 rounded-xl border border-electric-purple/30
+               bg-deep-void/80 backdrop-blur-sm p-6 flex flex-col
+               items-center justify-center text-center overflow-hidden
+               transition-colors hover:border-electric-purple"
+    style={{ transformStyle: "preserve-3d" }}
+  >
+    {/* dot grid, icon, title, description, corner runes */}
+  </motion.div>
+</Link>
+```
+</CodeGroup>

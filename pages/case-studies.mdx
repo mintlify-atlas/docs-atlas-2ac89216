@@ -1,0 +1,261 @@
+---
+title: "Case Studies Page: HexWeaver Scroll-Tracked Narrative"
+sidebarTitle: "Case Studies"
+description: "The Case Studies page presents the HexWeaver project as a scroll-progress-tracked narrative with four ritual-themed sections: Curse, Ritual, Scrying, and Aftermath."
+---
+
+The Case Studies page presents the **HexWeaver** design system project as a long-form scroll narrative — four ritual-themed sections that walk through problem, process, testing, and results. A sticky left sidebar tracks scroll progress with a glowing `electric-purple` bar and diamond markers. An ambient purple glow blob follows the scroll position, drifting down the page as the reader advances.
+
+## Route
+
+```
+/case-studies
+```
+
+## Scroll Progress Tracking
+
+The page uses Framer Motion's `useScroll` hook bound to a `ref` on the outer container:
+
+```jsx
+function ht() {
+  const containerRef = useRef(null);
+
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end end"],
+  });
+
+  const progressHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  // ...
+}
+```
+
+- `offset: ["start start", "end end"]` means progress goes from `0` when the container's top aligns with the viewport top, to `1` when the container's bottom aligns with the viewport bottom.
+- `progressHeight` is a `MotionValue<string>` that maps `[0, 1]` → `["0%", "100%"]`, used as the `height` style prop on the progress bar.
+
+The ambient glow blob also uses this transform:
+
+```jsx
+<motion.div
+  className="absolute -left-32 w-64 h-64 bg-electric-purple/10 blur-[100px] rounded-full pointer-events-none"
+  style={{ top: progressHeight }}
+/>
+```
+
+## Left Sidebar Progress Bar
+
+The sidebar is `hidden` on smaller screens and only appears at `lg:` breakpoints:
+
+```jsx
+<div className="hidden lg:block w-16 relative">
+  <div className="sticky top-32 h-[60vh] flex flex-col items-center">
+    {/* Track line */}
+    <div className="absolute top-0 bottom-0 w-[1px] bg-slate-800" />
+
+    {/* Animated fill */}
+    <motion.div
+      className="absolute top-0 w-[2px] bg-electric-purple shadow-[0_0_10px_var(--electric-purple)]"
+      style={{ height: progressHeight }}
+    />
+
+    {/* Diamond markers at 0%, 25%, 50%, 75%, 100% */}
+    {[0, 25, 50, 75, 100].map((pct, i) => (
+      <div
+        key={i}
+        className="absolute w-4 h-4 bg-void border border-electric-purple rotate-45"
+        style={{ top: `${pct}%`, transform: "translateY(-50%) rotate(45deg)" }}
+      />
+    ))}
+  </div>
+</div>
+```
+
+The progress bar fill `height` is driven directly by the scroll `MotionValue`, so it updates on every scroll frame without triggering a React re-render. Five diamond markers are positioned at `0%`, `25%`, `50%`, `75%`, and `100%` of the `60vh` sidebar height.
+
+## Page Title
+
+```jsx
+<h1 className="font-display text-5xl md:text-7xl text-electric-purple glow-text-purple mb-4">
+  Project: HexWeaver
+</h1>
+<p className="font-mono text-xl text-slate-400">
+  Lifting the curse of inconsistent UI.
+</p>
+```
+
+Note: unlike other pages, the title `h1` here is not wrapped in `motion.h1` — it renders statically without an entrance animation.
+
+## Narrative Sections
+
+The page body is divided into four themed sections, each with a glyph icon prefix in the heading.
+
+### ⎊ The Curse (Problem)
+
+```jsx
+<section className="mb-32">
+  <h2 className="font-display text-3xl text-magenta mb-6 flex items-center gap-4">
+    <span className="text-xl">⎊</span> The Curse (Problem)
+  </h2>
+  <div className="bg-[#111] border-l-4 border-magenta p-8 font-mono text-slate-300">
+    <p>
+      The client's legacy application was haunted by 14 different shades of gray,
+      6 conflicting button styles, and CSS that cascaded like a waterfall of despair.
+      User engagement was dropping, and developers feared touching the stylesheets.
+    </p>
+  </div>
+</section>
+```
+
+The problem statement is presented in a left-bordered `bg-[#111]` terminal block with `border-l-4 border-magenta` — visually treating the problem description as a warning or error log.
+
+**Key metrics:**
+- 14 different shades of gray
+- 6 conflicting button styles
+- Cascading CSS despair
+
+### ⟁ The Ritual (Process)
+
+```jsx
+<section className="mb-32">
+  <h2 className="font-display text-3xl text-cyan mb-6 flex items-center gap-4">
+    <span className="text-xl">⟁</span> The Ritual (Process)
+  </h2>
+  <div className="space-y-8">
+    {steps.map((step, i) => (
+      <motion.div
+        key={i}
+        initial={{ opacity: 0, x: -20 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true }}
+        className="flex items-center gap-6"
+      >
+        <div className="w-12 h-12 rounded-full border border-cyan flex items-center justify-center
+                        font-mono text-cyan shadow-[0_0_10px_rgba(34,211,238,0.2)]">
+          0{i + 1}
+        </div>
+        <div className="font-mono text-lg text-slate-200">{step}</div>
+      </motion.div>
+    ))}
+  </div>
+</section>
+```
+
+**Process steps:**
+
+```js
+const steps = [
+  "Audit existing components",
+  "Extract design tokens",
+  "Build React component library",
+  "Gradual migration",
+];
+```
+
+Each step has a circular `cyan`-bordered step number badge (`01`, `02`, `03`, `04`) and slides in from the left with `whileInView`. The `viewport={{ once: true }}` flag ensures each step animates in only the first time it enters the viewport.
+
+### Δ Scrying (Testing)
+
+The testing section renders a mock terminal output with a blinking cursor:
+
+```jsx
+<section className="mb-32">
+  <h2 className="font-display text-3xl text-neon-lime mb-6 flex items-center gap-4">
+    <span className="text-xl">Δ</span> Scrying (Testing)
+  </h2>
+  <div className="bg-[#0a0a0a] border border-neon-lime/30 rounded p-6 crt-overlay font-mono text-sm text-neon-lime">
+    <div>$ jest --coverage</div>
+    <div className="text-slate-500">PASS src/components/Button.test.tsx</div>
+    <div className="text-slate-500">PASS src/components/Modal.test.tsx</div>
+    <div className="mt-4 text-green-400">Test Suites:  42 passed,   42 total</div>
+    <div className="text-green-400">Tests:      1337 passed, 1337 total</div>
+    <div className="text-green-400">Snapshots:     0 total</div>
+    <div className="text-green-400">Time:        4.2s</div>
+    <motion.div
+      animate={{ opacity: [1, 0] }}
+      transition={{ repeat: Infinity }}
+      className="w-2 h-4 bg-neon-lime mt-2"
+    />
+  </div>
+</section>
+```
+
+**Test results:**
+
+| Metric | Value |
+|---|---|
+| Test Suites | 42 passed, 42 total |
+| Tests | 1337 passed, 1337 total |
+| Snapshots | 0 total |
+| Time | 4.2s |
+
+The `crt-overlay` class applies a scanline texture effect. The blinking cursor (`motion.div`) uses an `opacity: [1, 0]` keyframe that `repeat: Infinity` — a simple two-frame infinite loop.
+
+<Note>
+  The value `1337` (leet) is a deliberate easter egg in the test count.
+</Note>
+
+### ∇ The Aftermath (Results)
+
+```jsx
+<section className="mb-32">
+  <h2 className="font-display text-3xl text-electric-purple mb-6 flex items-center gap-4">
+    <span className="text-xl">∇</span> The Aftermath (Result)
+  </h2>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {results.map((result, i) => (
+      <div key={i} className="bg-deep-void border border-electric-purple/30 p-6 text-center
+                               shadow-[0_0_15px_rgba(168,85,247,0.1)]">
+        <div className="font-display text-4xl text-electric-purple mb-2">
+          {result.value}
+        </div>
+        <div className="font-mono text-sm text-slate-400">
+          {result.label}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+```
+
+**Results data:**
+
+```js
+const results = [
+  { label: "Bundle Size",    value: "-45%"    },
+  { label: "Dev Velocity",   value: "+200%"   },
+  { label: "Accessibility",  value: "100/100" },
+];
+```
+
+Results render as a three-column stat card grid on `md:` and above. Each card has a `shadow-[0_0_15px_rgba(168,85,247,0.1)]` purple glow and a large `font-display text-4xl` stat value.
+
+## Section Glyph Reference
+
+| Section | Glyph | Color |
+|---|---|---|
+| The Curse (Problem) | ⎊ | `text-magenta` |
+| The Ritual (Process) | ⟁ | `text-cyan` |
+| Scrying (Testing) | Δ | `text-neon-lime` |
+| The Aftermath (Result) | ∇ | `text-electric-purple` |
+
+## Full Layout Structure
+
+```
+┌──────────┬───────────────────────────────────────────────────┐
+│          │  Project: HexWeaver                               │
+│  Scroll  │  Lifting the curse of inconsistent UI.            │
+│ Progress │                                                   │
+│ Sidebar  │  ⎊ The Curse (Problem)          [magenta block]  │
+│  (lg:)   │                                                   │
+│  ░░░░░░  │  ⟁ The Ritual (Process)         [cyan steps]     │
+│  ◇       │                                                   │
+│  │       │  Δ  Scrying (Testing)           [terminal mock]  │
+│  ◇       │                                                   │
+│  │       │  ∇  The Aftermath (Result)      [stat cards]     │
+│  ◇       │                                                   │
+└──────────┴───────────────────────────────────────────────────┘
+```
+
+<Tip>
+  The scroll progress sidebar uses `sticky top-32 h-[60vh]` so it remains visible for the middle 60% of the viewport height during scrolling, rather than snapping to the very top edge.
+</Tip>

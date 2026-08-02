@@ -1,0 +1,100 @@
+---
+title: "Digital Coven: Occult-Themed React Portfolio"
+sidebarTitle: "Introduction"
+description: "Digital Coven is a dark-retro React SPA combining Framer Motion animations, a custom design system, and immersive occult visuals into a developer portfolio."
+---
+
+Digital Coven is a single-page developer portfolio built to feel like a living grimoire — equal parts personal brand and front-end craft demonstration. The site pairs a deeply atmospheric visual language (void backgrounds, neon glows, alchemical sigils) with a fully animated React application that never sacrifices interactivity for aesthetics. Every element, from the rotating summoning circle on the home page to the glitching terminal typewriter, is purpose-built to showcase what modern browser APIs and animation libraries can do when pushed with intention.
+
+## Tech Stack
+
+Digital Coven is built on a lean, modern front-end stack:
+
+| Layer | Technology |
+|---|---|
+| Framework | React 18 |
+| Build tool | Vite |
+| Routing | React Router v6 (hash-based) |
+| Animation | Framer Motion |
+| Styling | Tailwind CSS |
+| Fonts | Cinzel Decorative (display), JetBrains Mono (body/code) |
+
+## Routes
+
+The app defines seven routes, each mapping to a thematically named page:
+
+| Path | Page |
+|---|---|
+| `/` | Home — summoning circle, hero typewriter, project marquee |
+| `/about` | Origin Story — animated timeline of milestones |
+| `/projects` | Grimoire of Repos — hexagon, terminal, and runestone project tiles |
+| `/skills` | Skill Constellation — interactive skill graph + Cauldron component |
+| `/writing` | The Scrolls — filterable article cards in torn and folded formats |
+| `/case-studies` | Case Studies — scroll-progress sidebar and detailed project write-ups |
+| `/contact` | Contact — the final sigil |
+
+Navigation is declared as a static array in the layout and rendered as a fixed header that uses `mix-blend-difference` to float above every page's background.
+
+## Visual Design
+
+<Note>
+  All colour values are CSS custom properties consumed by Tailwind utility classes. No hex codes are hardcoded in components.
+</Note>
+
+The design system revolves around five neon accent colours layered over near-black backgrounds:
+
+- **`--void`** — the primary background, a near-black that reads as infinite depth
+- **`--deep-void`** — used for radial gradients in the animated background layer
+- **`--electric-purple`** — primary accent, used on headings, borders, and the summoning circle SVG
+- **`--neon-lime`** — secondary accent, used on the "DC" wordmark and typewriter subtitle
+- **`--magenta`** — tertiary accent, text selection highlight and writing-page heading
+- **`--cyan`** — interactive accent, nav hover states and timeline lines
+
+Display headings use **Cinzel Decorative** (`font-display`) for a classical-meets-arcane aesthetic. All monospaced output, labels, and body copy use **JetBrains Mono** (`font-mono`).
+
+## Key Features
+
+### Custom Cursor
+
+The browser's default cursor is replaced by a custom `<CustomCursor />` component. The cursor renders as a circular crosshair with a dot centre. When hovering over interactive elements (`<a>`, `<button>`, inputs), it scales to 1.5×, rotates 45°, and its colour shifts from electric-purple to cyan. A trailing burst of neon-lime star glyphs (SVG pentagram-star paths) spawns on mouse move above a probability threshold and fade out over 0.8 seconds.
+
+### Animated Background Atmosphere
+
+`<BackgroundAtmosphere />` is fixed behind every page at `z-index: -1`. It composes three layers:
+
+1. A low-opacity Unsplash nebula photograph at `mix-blend-screen`
+2. Two large, blurred `deep-void` and `electric-purple` radial gradient orbs animated in opposing Lissajous paths on 20 s and 25 s loops
+3. Fifteen floating alchemical glyphs (`Δ`, `∇`, `⟁`, `⨂`, `⧋`, `⎊`) drifting on randomised 40–80 s rotation loops at `opacity-[0.03]`
+
+### Summoning Circle
+
+`<SummoningCircle />` renders a multi-ring SVG mandala in `electric-purple` at the centre of the home page. The entire group rotates one full revolution every 60 seconds via Framer Motion's `animate={{ rotate: 360 }}` with `repeat: Infinity`. The mandala includes two dashed outer rings, an inner ring, a pentagram path, a hexagon, and six evenly-spaced occult glyphs positioned at 60° intervals.
+
+### Hero Typewriter
+
+`<HeroText />` displays the portfolio owner's name in a staggered per-character reveal animation (0.1 s delay per character starting at 0.5 s). Below the name, the subtitle — **"Source Code, Summoned."** — types out character by character at 100 ms per character. Once the full string is typed, a glitch animation fires every 3 seconds via a CSS `animate-glitch` class toggled by a `useState` flag. A blinking neon-lime cursor block (`bg-neon-lime`) pulses beside the text at all times.
+
+### Hash-Based Routing for Static Hosts
+
+`index.html` contains an inline script that redirects any URL without a hash fragment to `/#/`. This means the React Router v6 `HashRouter` receives a valid route on every cold load, making the site deployable to GitHub Pages or any static file host without server-side rewrite rules.
+
+<Tip>
+  A `.nojekyll` file is committed at the repository root so GitHub Pages does not try to process the build output through Jekyll, which would strip files beginning with an underscore.
+</Tip>
+
+## Start Here
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Clone the repo, install dependencies, and run the Vite dev server in under two minutes.
+  </Card>
+  <Card title="Project Structure" icon="folder-tree" href="/architecture/project-structure">
+    Explore how pages, components, and assets are organised inside the repository.
+  </Card>
+  <Card title="Design System" icon="palette" href="/architecture/design-system">
+    Deep-dive into the colour tokens, typography scale, and Tailwind configuration.
+  </Card>
+  <Card title="Layout Components" icon="layout" href="/components/layout">
+    Understand the layout shell, fixed header, navigation, and page-transition wrappers.
+  </Card>
+</CardGroup>

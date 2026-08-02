@@ -1,0 +1,94 @@
+{
+  "projectType": "frontend",
+  "projectName": "Digital Coven",
+  "projectDescription": "A dark-retro, occult-themed personal portfolio and developer showcase built with React, Framer Motion, and Tailwind CSS, featuring animated components, a skill constellation, and an immersive visual experience.",
+  "theme": "willow",
+  "primaryColor": "#a855f7",
+  "lightColor": "#a3ff12",
+  "darkColor": "#08060d",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Overview",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Architecture",
+            "pages": ["architecture/project-structure", "architecture/routing", "architecture/design-system"]
+          }
+        ]
+      },
+      {
+        "tab": "Components",
+        "groups": [
+          {
+            "group": "Layout",
+            "pages": ["components/layout", "components/background-atmosphere", "components/custom-cursor"]
+          },
+          {
+            "group": "Home Page",
+            "pages": ["components/hero-text", "components/summoning-circle", "components/cards-of-fate", "components/terminal-status", "components/project-marquee"]
+          },
+          {
+            "group": "Feature Sections",
+            "pages": ["components/skill-constellation", "components/cauldron", "components/timeline-milestones", "components/project-tiles", "components/article-formats"]
+          }
+        ]
+      },
+      {
+        "tab": "Pages & Customization",
+        "groups": [
+          {
+            "group": "Pages",
+            "pages": ["pages/home", "pages/about", "pages/projects", "pages/skills", "pages/writing", "pages/case-studies", "pages/contact"]
+          },
+          {
+            "group": "Customization",
+            "pages": ["customization/theming", "customization/animations"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Dark occult-themed aesthetic with neon glow effects (electric-purple, neon-lime, magenta, cyan)",
+    "Custom cursor component replacing the default browser cursor",
+    "Animated background atmosphere with ambient particle effects",
+    "Summoning Circle SVG animation on the home page",
+    "Typewriter-effect hero text with animated letter reveal",
+    "Interactive skill constellation graph with hover tooltips and connection lines",
+    "Drag-and-drop Cauldron ingredient interaction on the Skills page",
+    "Cards of Fate — interactive tarot-style project highlight cards",
+    "Scrolling project marquee ticker",
+    "Timeline milestones for the About/Origin Story page",
+    "Three distinct project tile styles (hexagon, terminal, runestone) on the Projects page",
+    "Filterable writing/blog articles with torn and folded card formats",
+    "Scroll-progress-tracked Case Studies page",
+    "Animated contact form with glowing inputs and a guestbook",
+    "Framer Motion page transitions with blur and slide animations",
+    "CRT scanline overlay effect on code blocks",
+    "Custom scrollbar styled with electric-purple accent",
+    "Cinzel Decorative serif font for headings and JetBrains Mono for code/body"
+  ],
+  "publicApiSurface": [
+    "BackgroundAtmosphere — ambient canvas-based animated backdrop",
+    "CustomCursor — custom SVG cursor with AnimatePresence mode",
+    "HeroText — animated typewriter headline (name: 'Alex Morgan', tagline: 'Source Code, Summoned.')",
+    "SummoningCircle — SVG summoning circle animation component",
+    "CardsOfFate — tarot-style project highlight cards",
+    "TerminalStatus — animated terminal status readout",
+    "ProjectMarquee — horizontal scrolling project name ticker",
+    "SkillConstellation — interactive SVG node graph of tech skills",
+    "Cauldron — drag-and-drop ingredient brewing interaction",
+    "TimelineMilestones — vertical timeline with alternating left/right milestone cards (2018–Present)",
+    "ThingsINotice — reflective 'things I notice' personality section",
+    "ProjectTiles — three layout variants: HexagonTile, TerminalTile, RunestoneTile",
+    "ArticleFormats — two article card styles: TornCard, FoldedCard",
+    "useScreenInit — React screen initialization hook (wraps React namespace for components)",
+    "Layout (AppShell) — fixed header with 'DC' logo, route-based nav links, AnimatePresence page transitions",
+    "Routes: / (Home), /about, /projects, /skills, /writing, /case-studies, /contact"
+  ]
+}

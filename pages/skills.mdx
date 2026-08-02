@@ -1,0 +1,122 @@
+---
+title: "Skills Page: Constellation Graph and Cauldron"
+sidebarTitle: "Skills"
+description: "The Skills page combines an interactive SVG skill node graph with a drag-and-drop Cauldron, letting visitors explore tech skills and brew ingredient combinations."
+---
+
+The Skills page — titled **Skill Constellation** — visualizes technical proficiency as a star map rather than a progress-bar list. An interactive SVG graph renders each skill as a node connected by glowing edges, inviting visitors to explore relationships between technologies. Below it, the **Cauldron** component adds a playful drag-and-drop minigame where skills can be combined into "brews."
+
+## Route
+
+```
+/skills
+```
+
+## Page Header
+
+```jsx
+<motion.h1
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="font-display text-5xl md:text-7xl text-magenta
+             drop-shadow-[0_0_15px_var(--magenta)] mb-4"
+>
+  Skill Constellation
+</motion.h1>
+<p className="font-mono text-slate-400">
+  Languages I Speak (to Computers)...
+</p>
+```
+
+The title uses `text-magenta` with an explicit `drop-shadow-[0_0_15px_var(--magenta)]` utility — unlike other pages that use the `glow-text-*` shorthand classes, this is an inline Tailwind arbitrary value. The glow radius is `15px` rather than the standard `8-10px` used on other pages, making this the most visually intense title treatment in the app.
+
+## Component Composition
+
+The page function `ut` is the simplest of all page functions — two components below the header with no local state or data:
+
+```jsx
+function ut() {
+  return (
+    <div className="max-w-6xl mx-auto py-12">
+      <div className="text-center mb-16">
+        <motion.h1 ...>Skill Constellation</motion.h1>
+        <p ...>Languages I Speak (to Computers)...</p>
+      </div>
+      <SkillConstellation />
+      <Cauldron />
+    </div>
+  );
+}
+```
+
+<CardGroup cols={2}>
+  <Card title="SkillConstellation" icon="chart-network" href="/components/skill-constellation">
+    An interactive SVG force-directed graph where each node represents a technology. Nodes glow when hovered and can be dragged to rearrange the star map. Connected nodes share a glowing edge line.
+  </Card>
+  <Card title="Cauldron" icon="flask-conical" href="/components/cauldron">
+    A drag-and-drop brewing minigame. Skill tokens can be dragged into the cauldron to produce "brew" results — named combinations of technologies with humorous descriptions.
+  </Card>
+</CardGroup>
+
+## SkillConstellation
+
+Imported as `Se` from `components/skills/SkillConstellation.js`. The component renders an SVG canvas with:
+
+- **Nodes**: circular SVG elements, one per skill, with a label and a radial glow effect
+- **Edges**: `<line>` elements connecting related skill nodes, styled with `stroke: var(--cyan)` at low opacity
+- **Interaction**: nodes respond to `mouseenter`/`mouseleave` for glow amplification, and support drag-repositioning via pointer events
+- **Layout**: uses a force-simulation algorithm to naturally space nodes; initial positions are randomized within the SVG viewport
+
+<Note>
+  The exact skill node list and edge connections are defined within `SkillConstellation.js`. Refer to the [SkillConstellation component docs](/components/skill-constellation) for the full node data structure.
+</Note>
+
+## Cauldron
+
+Imported as `Te` from `components/skills/Cauldron.js`. The component presents:
+
+- A stylized cauldron SVG with a bubbling animation
+- Draggable skill ingredient tokens positioned around the cauldron
+- A result display area that shows the "brew name" and description when a valid combination is detected
+- A reset button to clear the cauldron and return ingredients to their start positions
+
+<Tip>
+  The Cauldron uses the HTML Drag and Drop API with custom drag ghost styling to preserve the occult aesthetic. Dropped items trigger a particle burst animation inside the cauldron mouth.
+</Tip>
+
+## Layout
+
+The page uses `max-w-6xl mx-auto py-12` — a centered, padded single-column layout:
+
+```
+┌─────────────────────────────────────┐
+│          Skill Constellation        │  ← h1, font-display, text-magenta
+│       Languages I Speak...          │  ← subtitle, font-mono, text-slate-400
+├─────────────────────────────────────┤
+│                                     │
+│         [SVG Star Map]              │  ← SkillConstellation (full width)
+│                                     │
+├─────────────────────────────────────┤
+│                                     │
+│    [Cauldron + Draggable Tokens]    │  ← Cauldron (full width)
+│                                     │
+└─────────────────────────────────────┘
+```
+
+## Component Imports
+
+```js
+import { S as SkillConstellation } from "../components/skills/SkillConstellation.js";
+import { C as Cauldron }           from "../components/skills/Cauldron.js";
+```
+
+## Animation Entry
+
+The page header `motion.h1` uses the standard Digital Coven entrance pattern:
+
+```js
+initial:  { opacity: 0, y: -20 }
+animate:  { opacity: 1, y: 0 }
+```
+
+The `SkillConstellation` and `Cauldron` components manage their own internal animation states independently of the page-level Framer Motion tree.

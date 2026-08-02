@@ -1,0 +1,201 @@
+---
+title: "Writing Page: The Scrolls — Filterable Article Feed"
+sidebarTitle: "Writing"
+description: "The Writing page shows a pinned manifesto and four filterable articles displayed as TornCard or FoldedCard components, filtered by tag using React useState."
+---
+
+The Writing page — titled **The Scrolls** — presents Alex's technical articles and reflections as physical paper artifacts: torn pages and folded notes scattered across the feed. A pinned manifesto sits above the feed, and a row of tag buttons lets visitors filter articles by category. Filtering is handled entirely client-side with a single `useState` hook.
+
+## Route
+
+```
+/writing
+```
+
+## Page Header
+
+```jsx
+<motion.h1
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="font-display text-5xl md:text-7xl text-cyan glow-text-cyan mb-4"
+>
+  The Scrolls
+</motion.h1>
+<p className="font-mono text-slate-400">
+  Translated for Humans...
+</p>
+```
+
+The title uses `text-cyan` with `glow-text-cyan` drop-shadow — the only page in the app that uses cyan as its primary heading color.
+
+## State
+
+The page uses a single `useState` hook to track the active filter tag:
+
+```js
+const [activeTag, setActiveTag] = useState("All");
+```
+
+The filtered article list is derived inline on every render:
+
+```js
+const visibleArticles = articles.filter(
+  (article) => activeTag === "All" || article.tag === activeTag
+);
+```
+
+## Pinned Manifesto
+
+A pinned article sits above the filter bar, permanently visible regardless of the active tag:
+
+```jsx
+<div className="mb-16 p-6 border-2 border-magenta/50 bg-magenta/5 rounded-lg relative">
+  <div className="absolute -top-3 left-6 bg-void px-2 text-magenta font-mono text-xs">
+    📌 Pinned
+  </div>
+  <h2 className="font-display text-2xl text-slate-200 mb-2">
+    My Manifesto: Code as Craft
+  </h2>
+  <p className="font-mono text-sm text-slate-400">
+    Software isn't just logic; it's an expression of intent.
+    Here's why I treat every function like a carefully constructed spell...
+  </p>
+</div>
+```
+
+The `📌 Pinned` label is absolutely positioned at `-top-3 left-6` to overlap the card's top border, creating a sticky-label effect. The card uses `border-magenta/50` (50% opacity) with `bg-magenta/5` (5% opacity fill) for a subtle tinted border frame.
+
+## Filter Tags
+
+```js
+const tags = [
+  "All",
+  "Technical Writing",
+  "Reflections",
+  "Bug Reports",
+  "Translated for Humans",
+];
+```
+
+Each tag renders as a toggle button:
+
+```jsx
+<button
+  onClick={() => setActiveTag(tag)}
+  className={`px-4 py-2 font-mono text-sm border transition-colors
+    ${activeTag === tag
+      ? "border-cyan bg-cyan/10 text-cyan shadow-[0_0_10px_rgba(34,211,238,0.2)]"
+      : "border-slate-700 text-slate-400 hover:border-cyan/50"
+    }`}
+>
+  {tag}
+</button>
+```
+
+The active tag gets a `bg-cyan/10` fill, `text-cyan` text, and a `box-shadow` glow. Inactive tags have a `slate-700` border that shifts to `cyan/50` on hover.
+
+## Article Data
+
+```js
+const articles = [
+  {
+    type:    "torn",
+    title:   "Why Your `useEffect` is Haunting You",
+    excerpt: "A deep dive into the spectral realm of React dependency arrays and how to exorcise infinite loops before they consume your memory.",
+    date:    "Oct 31, 2023",
+    tag:     "Bug Reports",
+  },
+  {
+    type:    "folded",
+    title:   "The Alchemy of CSS Grid",
+    excerpt: "Transmuting chaotic div soup into perfectly aligned layouts using nothing but a few lines of grid incantations.",
+    date:    "Nov 15, 2023",
+    tag:     "Technical Writing",
+  },
+  {
+    type:    "torn",
+    title:   "Imposter Syndrome in the Coven",
+    excerpt: "Sometimes you feel like a wizard, sometimes you feel like you just copy-pasted a spell you don't understand. Both are valid.",
+    date:    "Dec 02, 2023",
+    tag:     "Reflections",
+  },
+  {
+    type:    "folded",
+    title:   "Explaining APIs to My Cat",
+    excerpt: "A completely non-technical breakdown of how computers talk to each other, featuring treats as data packets.",
+    date:    "Jan 10, 2024",
+    tag:     "Translated for Humans",
+  },
+];
+```
+
+<Note>
+  The `type` field on each article determines which card component renders it — `"torn"` maps to `TornCard` and `"folded"` maps to `FoldedCard`. There is no default fallback; unrecognized types render nothing.
+</Note>
+
+## Article Card Components
+
+Articles are rendered in a `grid grid-cols-1 md:grid-cols-2 gap-8` layout:
+
+```jsx
+<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+  {visibleArticles.map((article, i) => (
+    <motion.div
+      key={i}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: i * 0.1 }}
+    >
+      {article.type === "torn"   && <TornCard   {...article} />}
+      {article.type === "folded" && <FoldedCard {...article} />}
+    </motion.div>
+  ))}
+</div>
+```
+
+Each card animates in with a `y: 20 → 0` slide-up staggered by `0.1s` per visible article. When the filter changes and `visibleArticles` updates, the cards re-mount and replay their entrance animations.
+
+<CardGroup cols={2}>
+  <Card title="TornCard" icon="file-x" href="/components/article-formats#torn-card">
+    Mimics a page torn from a notebook — ragged SVG edge along one side, slight rotation, and a paper-texture background. Used for **Bug Reports** and **Reflections** articles.
+  </Card>
+  <Card title="FoldedCard" icon="file-fold" href="/components/article-formats#folded-card">
+    Mimics a folded piece of paper with a dog-eared corner effect — a CSS `clip-path` triangle in the top-right corner. Used for **Technical Writing** and **Translated for Humans** articles.
+  </Card>
+</CardGroup>
+
+## Article–Component Mapping
+
+| Title | Type | Tag | Date |
+|---|---|---|---|
+| Why Your \`useEffect\` is Haunting You | `TornCard` | Bug Reports | Oct 31, 2023 |
+| The Alchemy of CSS Grid | `FoldedCard` | Technical Writing | Nov 15, 2023 |
+| Imposter Syndrome in the Coven | `TornCard` | Reflections | Dec 02, 2023 |
+| Explaining APIs to My Cat | `FoldedCard` | Translated for Humans | Jan 10, 2024 |
+
+## Filtering Behavior
+
+<Steps>
+  <Step title="Default State">
+    On mount, `activeTag` is `"All"` and all four articles are visible. The **All** filter button shows its active style (cyan border, cyan fill).
+  </Step>
+  <Step title="Tag Selected">
+    Clicking a tag button calls `setActiveTag(tag)`, which triggers a re-render. The `visibleArticles` derived list filters to only articles matching the selected tag.
+  </Step>
+  <Step title="Cards Re-Animate">
+    Because the filtered `visibleArticles` array produces a new set of mapped `motion.div` elements, Framer Motion re-plays the `initial → animate` entrance for each visible card.
+  </Step>
+  <Step title="Reset to All">
+    Clicking **All** resets `activeTag` to `"All"`, making all four articles visible again.
+  </Step>
+</Steps>
+
+## Component Imports
+
+```js
+import {
+  T as TornCard,
+  F as FoldedCard,
+} from "../components/writing/ArticleFormats.js";
+```

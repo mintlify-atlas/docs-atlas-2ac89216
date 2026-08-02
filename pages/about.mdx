@@ -1,0 +1,214 @@
+---
+title: "About Page: Origin Story and Career Timeline"
+sidebarTitle: "About"
+description: "The About page renders an animated vertical timeline of career milestones from 2018 to Present, followed by the ThingsINotice personality section."
+---
+
+The About page tells the story of how Alex Morgan transitioned from healthcare and retail into software development — rendered not as a résumé, but as an occult origin story. A glowing vertical timeline bisects the page, with milestone cards branching left and right from a central cyan spine. The page closes with **ThingsINotice**, a wall of interactive pet-peeve tags that doubles as a personality snapshot.
+
+## Route
+
+```
+/about
+```
+
+## Page Header
+
+```jsx
+<motion.h1
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="font-display text-5xl md:text-7xl text-electric-purple glow-text-purple mb-4"
+>
+  Origin Story
+</motion.h1>
+<p className="font-mono text-slate-400">
+  Currently debugging reality...
+</p>
+```
+
+The title uses the `font-display` typeface at `text-5xl` on mobile scaling to `text-7xl` on `md:` breakpoints. The `text-electric-purple` color is paired with `glow-text-purple` — a CSS utility that applies `drop-shadow` in the `--electric-purple` custom property value.
+
+## Timeline Structure
+
+The timeline is a vertically centered layout with a glowing line running down the middle of the page. Each milestone entry alternates between left and right alignment.
+
+### Center Spine
+
+```html
+<div class="absolute left-1/2 top-0 bottom-0 w-[2px] -translate-x-1/2
+            bg-gradient-to-b from-transparent via-cyan to-transparent
+            shadow-[0_0_10px_var(--cyan)]" />
+```
+
+The spine is a `2px`-wide `div` absolutely positioned at `left-1/2`. It uses a vertical gradient from `transparent → --cyan → transparent` so the line appears to glow from the center outward, and a `box-shadow` echoes the `--cyan` glow color.
+
+### Timeline Dots
+
+Each milestone entry has a dot anchored to the center spine:
+
+```html
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+            w-4 h-4 rounded-full bg-void border-2 border-cyan
+            shadow-[0_0_10px_var(--cyan)] z-10" />
+```
+
+The dot is `16×16px`, uses `bg-void` (the deepest background tone) as its fill, and is outlined with a `2px` `border-cyan` ring. The same `shadow` trick as the spine creates a soft cyan halo.
+
+## Milestone Entries
+
+The page function `dt` defines the five milestone cards as an array and maps over them:
+
+```js
+const milestones = [
+  { component: <PolaroidCard />,    align: "left",  year: "2018"    },
+  { component: <StickyNoteCard />,  align: "right", year: "2020"    },
+  { component: <FlatCard />,        align: "left",  year: "2021"    },
+  { component: <ErrorBlockCard />,  align: "right", year: "2022"    },
+  { component: <PotionCard />,      align: "left",  year: "Present" },
+];
+```
+
+Each entry renders a `motion.div` wrapper that slides in from the correct side on scroll entry:
+
+```jsx
+<motion.div
+  initial={{ opacity: 0, x: align === "left" ? -50 : 50 }}
+  whileInView={{ opacity: 1, x: 0 }}
+  viewport={{ once: true, margin: "-100px" }}
+  transition={{ duration: 0.6, type: "spring" }}
+>
+  {/* year label + milestone component */}
+</motion.div>
+```
+
+The `viewport={{ once: true, margin: "-100px" }}` means each card animates in exactly once when it is 100px from entering the viewport.
+
+### Milestone Card Components
+
+Each year maps to a distinct styled card imported from `components/about/TimelineMilestones.js`:
+
+| Year | Export | Visual Style | Content |
+|---|---|---|---|
+| 2018 | `P` (PolaroidCard) | Polaroid photo with red tape, rotated `+2deg` | **Past Life: Healthcare** — photo overlay with `electric-purple/20` tint |
+| 2020 | `S` (StickyNoteCard) | Yellow sticky note, rotated `-3deg` | **Retail & Merchandising** — bulleted list: *Organized chaos, Dealt with humans, Learned patience* |
+| 2021 | `F` (FlatCard) | Gray card with `border-t-8 border-electric-purple`, 3D hover tilt | **The Curiosity Spark** — italic quote: *"What if I could build the tools instead of just using them?"* |
+| 2022 | `a` (ErrorBlockCard) | Dark terminal block, `border-red-500/30`, red glow | **Transitioning to Code** — stack trace mock: `Career.pivot (life.js:42)`, `Bootcamp.init (learning.js:101)`, `Self.discover (mind.js:666)` |
+| Present | `b` (PotionCard) | `border-neon-lime/50`, `bg-deep-void/80` recipe card | **Developer Potion** — ingredient list with quantities (tears of frustration, StackOverflow tabs ×42, caffeine extract, "Aha!" moments) |
+
+<Note>
+  Card components are exported with minified single-letter names in the production bundle (`P`, `S`, `F`, `a`, `b`). The human-readable names above are derived from inspecting the component bodies in `TimelineMilestones.js`.
+</Note>
+
+### Year Labels
+
+Each milestone renders the year as a floating label anchored to the outer edge of its card:
+
+```jsx
+<div
+  className={`absolute top-1/2 -translate-y-1/2
+    ${align === "left" ? "-right-8" : "-left-8"}
+    font-mono text-cyan text-sm font-bold opacity-50`}
+>
+  {year}
+</div>
+```
+
+The label is `50%` opacity and sits just outside the card boundary, pointing back toward the timeline spine.
+
+## ThingsINotice Section
+
+After the timeline, the page renders the `ThingsINotice` component (`be` in the bundle), imported from `components/about/ThingsINotice.js`.
+
+### Pet Peeves List
+
+```js
+const peeves = [
+  "Off-center buttons",
+  "Fake corporate enthusiasm",
+  "Unnecessary div wrappers",
+  "Light mode by default",
+  "Magic numbers in CSS",
+  "Unresponsive modals",
+  "Vague error messages",
+  "Missing alt text",
+];
+```
+
+Each string is rendered as an interactive pill tag:
+
+```jsx
+<motion.div
+  initial={{ opacity: 0, scale: 0.8 }}
+  whileInView={{ opacity: 1, scale: 1 }}
+  viewport={{ once: true }}
+  transition={{ delay: index * 0.1 }}
+  whileHover={{
+    scale: 1.1,
+    rotate: Math.random() * 10 - 5,      // random tilt between -5° and +5°
+    backgroundColor: "var(--electric-purple)",
+    color: "var(--void)",
+  }}
+  className="px-4 py-2 border border-slate-700 rounded-full
+             font-mono text-sm text-slate-400 cursor-none
+             transition-colors duration-300 hover:animate-glitch"
+>
+  {peeve}
+</motion.div>
+```
+
+<Tip>
+  On hover, each pill randomly rotates between `-5°` and `+5°` using `Math.random() * 10 - 5`. Since this is computed at render time within the `whileHover` object, the angle changes each time the component re-renders but is deterministic during a single interaction.
+</Tip>
+
+### Section Heading
+
+```jsx
+<h3 className="font-display text-3xl text-magenta glow-text-purple mb-8 text-center">
+  Things I Notice (A Wall of Pet Peeves)
+</h3>
+```
+
+Note that the heading uses `text-magenta` for the color but `glow-text-purple` for the shadow utility — a deliberate contrast effect that gives the text a slightly misaligned chromatic-aberration feel.
+
+## Full Page Composition
+
+```jsx
+function dt() {
+  return (
+    <div className="max-w-6xl mx-auto py-12">
+      {/* Page header */}
+      <div className="text-center mb-24">
+        <motion.h1 ...>Origin Story</motion.h1>
+        <p ...>Currently debugging reality...</p>
+      </div>
+
+      {/* Timeline */}
+      <div className="relative">
+        {/* Center spine */}
+        <div className="absolute left-1/2 ... bg-gradient-to-b from-transparent via-cyan to-transparent ..." />
+
+        {/* Milestone entries */}
+        <div className="space-y-24">
+          {milestones.map((milestone, i) => (
+            <div key={i} className={`flex items-center w-full
+              ${milestone.align === "left" ? "justify-start" : "justify-end"} relative`}>
+              {/* Center dot */}
+              <div className="absolute left-1/2 ... w-4 h-4 rounded-full bg-void border-2 border-cyan ..." />
+              {/* Card wrapper */}
+              <div className={`w-1/2 ${milestone.align === "left" ? "pr-12 flex justify-end" : "pl-12 flex justify-start"}`}>
+                <motion.div initial={{ opacity: 0, x: ... }} whileInView={{ opacity: 1, x: 0 }} ...>
+                  {/* Year label + card component */}
+                </motion.div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Pet peeves */}
+      <ThingsINotice />
+    </div>
+  );
+}
+```

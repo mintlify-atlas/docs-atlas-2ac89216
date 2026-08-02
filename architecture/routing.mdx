@@ -1,0 +1,171 @@
+---
+title: "React Router v6 Routing in Digital Coven"
+sidebarTitle: "Routing"
+description: "How Digital Coven uses React Router v6 with hash-based routing and AnimatePresence for animated page transitions across seven routes."
+---
+
+Digital Coven's navigation is built on React Router v6 with `HashRouter` as the history strategy — every URL becomes a fragment (`/#/about`, `/#/projects`, …) so the static host never needs to handle server-side redirects. An inline bootstrap script in `index.html` normalises any bare URL to its hash equivalent before the React bundle mounts, ensuring deep links always resolve correctly on a static file host such as GitHub Pages.
+
+## Router stack
+
+The root component (`yt` in `main.js`) composes three React Router v6 primitives:
+
+```jsx
+// Root App component (decompiled from main.js → yt)
+<HashRouter>          {/* ae — provides hash-based history */}
+  <AppShell>          {/* it — fixed header, cursor, background */}
+    <Routes>          {/* re — route matching context */}
+      <Route path="/"            element={<HomePage />} />
+      <Route path="/about"       element={<AboutPage />} />
+      <Route path="/projects"    element={<ProjectsPage />} />
+      <Route path="/skills"      element={<SkillsPage />} />
+      <Route path="/writing"     element={<WritingPage />} />
+      <Route path="/case-studies" element={<CaseStudiesPage />} />
+      <Route path="/contact"     element={<ContactPage />} />
+    </Routes>
+  </AppShell>
+</HashRouter>
+```
+
+<Note>
+In the compiled bundle, `HashRouter` is imported as `H` from `components/home/CardsOfFate.js`, `Routes` as `R`, and `Route` as `a`. The router primitives are co-bundled with the home-page components because `CardsOfFate.js` is the first chunk listed in `index.html`'s `modulepreload` sequence.
+</Note>
+
+## The seven routes
+
+| Path | Page component (minified name) | Page heading |
+|---|---|---|
+| `/` | `ct` — `HomePage` | Home (SummoningCircle + HeroText + CardsOfFate) |
+| `/about` | `dt` — `AboutPage` | *Origin Story* |
+| `/projects` | `mt` — `ProjectsPage` | *Grimoire of Repos* |
+| `/skills` | `ut` — `SkillsPage` | *Skill Constellation* |
+| `/writing` | `ft` — `WritingPage` | *The Scrolls* |
+| `/case-studies` | `ht` — `CaseStudiesPage` | *Project: HexWeaver* |
+| `/contact` | `gt` — `ContactPage` | *Summon Me* |
+
+## Navigation links array
+
+The header navigation is driven by the `ot` array defined in `main.js`. It intentionally omits the home route — the `DC` logotype link serves as the home button:
+
+```js
+// Exact source from assets/main.js
+const ot = [
+  { path: "/about",        label: "/about" },
+  { path: "/projects",     label: "/projects" },
+  { path: "/skills",       label: "/skills" },
+  { path: "/writing",      label: "/writing" },
+  { path: "/case-studies", label: "/case-studies" },
+  { path: "/contact",      label: "/contact" },
+];
+```
+
+Labels deliberately mirror their paths — they render as `/about`, `/skills`, etc., echoing a Unix filesystem aesthetic.
+
+## The `AppShell` layout wrapper
+
+`AppShell` (minified as `it`) is the persistent layout that wraps `<Routes>`. It renders on every page and is responsible for:
+
+1. **Fixed header** — Positioned `top-0` with `z-50`, uses `mix-blend-difference` so the `DC` logotype inverts whatever content is below it.
+2. **`DC` logotype link** — A `<Link to="/">` styled with `font-display` (Cinzel Decorative) in `text-neon-lime` with a drop-shadow glow. Hovering transitions to `text-cyan`.
+3. **Nav links** — Maps over `ot`, applying `text-electric-purple` with a purple glow on the active path (detected via `useLocation().pathname`), and `text-slate-400` otherwise.
+4. **`CustomCursor`** and **`BackgroundAtmosphere`** — Shared visual layers mounted once at the layout level.
+5. **`AnimatePresence`** wrapping `<Routes>` — Enables exit animations when routes change.
+
+```jsx
+// AppShell (it) — decompiled structure from main.js
+function AppShell({ children }) {
+  const location = useLocation();
+  return (
+    <div className="min-h-screen text-slate-200 selection:bg-magenta selection:text-void flex flex-col">
+      <CustomCursor />
+      <BackgroundAtmosphere />
+      <header className="fixed top-0 left-0 right-0 z-50 p-6 md:p-8 flex justify-between items-center mix-blend-difference">
+        <Link
+          to="/"
+          className="font-display text-3xl font-bold tracking-widest text-neon-lime
+                     drop-shadow-[0_0_8px_var(--neon-lime)]
+                     hover:text-cyan hover:drop-shadow-[0_0_12px_var(--cyan)]
+                     transition-all duration-300"
+        >
+          DC
+        </Link>
+        <nav className="hidden md:flex gap-6 font-mono text-sm">
+          {ot.map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`transition-colors duration-300 hover:text-cyan hover:drop-shadow-[0_0_5px_var(--cyan)]
+                ${location.pathname === link.path
+                  ? "text-electric-purple drop-shadow-[0_0_5px_var(--electric-purple)]"
+                  : "text-slate-400"
+                }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </header>
+      <AnimatePresence mode="wait">
+        <motion.main
+          key={location.pathname}
+          initial={{ opacity: 0, filter: "blur(10px)", y: 20 }}
+          animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+          exit={{ opacity: 0, filter: "blur(10px)", y: -20 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="flex-grow pt-32 px-6 md:px-12 lg:px-24 pb-24 relative z-10"
+        >
+          {children}
+        </motion.main>
+      </AnimatePresence>
+    </div>
+  );
+}
+```
+
+## Hash routing bootstrap script
+
+`index.html` embeds a small IIFE before the module scripts execute:
+
+```html
+<!-- index.html — inline <script> in <head> -->
+<script>
+  window.__STATIC_PAGE_ROUTE__ = "/";
+
+  (function () {
+    if (!window.location.hash || window.location.hash === "#") {
+      window.location.replace(
+        window.location.pathname +
+        window.location.search +
+        "#/"
+      );
+    }
+  })();
+</script>
+```
+
+**Why it exists:** GitHub Pages (and any generic static file host) serves files by path. If a user navigates directly to `https://example.com/digital-coven/about`, the server looks for an `about` file, finds nothing, and returns a 404. By forcing the hash prefix — so the URL becomes `https://example.com/digital-coven/#/about` — the browser never sends `/about` to the server; `index.html` is always served, and React Router interprets the hash fragment.
+
+The guard condition `!window.location.hash || window.location.hash === "#"` prevents a redirect loop: if a hash is already present (e.g., the user followed a link to `/#/projects`), the script does nothing.
+
+## Page transition: blur + slide
+
+`AnimatePresence` receives `mode="wait"`, which means React Router's exiting page fully completes its exit animation before the entering page mounts. The `motion.main` element is keyed by `location.pathname` so Framer Motion treats each route change as a distinct component unmount/mount pair.
+
+<CodeGroup>
+```jsx Enter transition
+initial={{ opacity: 0, filter: "blur(10px)", y: 20 }}
+animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+transition={{ duration: 0.5, ease: "easeInOut" }}
+```
+
+```jsx Exit transition
+exit={{ opacity: 0, filter: "blur(10px)", y: -20 }}
+transition={{ duration: 0.5, ease: "easeInOut" }}
+```
+</CodeGroup>
+
+The result is a symmetrical blur-and-slide: pages enter by sliding up from `y: 20` while un-blurring, and leave by sliding further up to `y: -20` while blurring out — giving a sense of pages rising through a void.
+
+<Tip>
+The `pt-32` padding-top on `motion.main` accounts for the fixed header height (`top-0`, `p-6 md:p-8`), ensuring page content is never obscured by the navigation bar.
+</Tip>

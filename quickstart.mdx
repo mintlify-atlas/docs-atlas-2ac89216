@@ -1,47 +1,128 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with Digital Coven"
+sidebarTitle: "Quickstart"
+description: "Clone Digital Coven, install dependencies with npm, and launch the Vite dev server to see the full animated portfolio running locally in under two minutes."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+Digital Coven is a Vite-powered React SPA, so the full local development workflow — from a fresh clone to a live browser preview — takes less than two minutes. The build system is standard Vite with no custom server configuration required; all you need is Node.js 18 or later and a package manager of your choice.
 
 ## Prerequisites
 
-Before you begin, you must have:
+Before you begin, make sure the following are available in your environment:
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
+- **Node.js 18+** — Vite's minimum supported version. Run `node -v` to check.
+- **npm**, **yarn**, or **pnpm** — any of the three work without additional configuration.
+- **Git** — to clone the repository.
 
-## Get started
+<Note>
+  The project was built and tested with Node.js 20 LTS. If you see peer-dependency warnings on older Node.js versions, upgrade to 20 LTS for the smoothest experience.
+</Note>
+
+## Full Setup Walkthrough
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+
+  <Step title="Clone the repository">
+    Pull the project from GitHub to your local machine:
 
     ```bash
-    npm install your-package
+    git clone https://github.com/apursley2012/digital-coven.git
+    cd digital-coven
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+
+  <Step title="Install dependencies">
+    Install all required packages. Choose the package manager you prefer — all three produce equivalent results:
+
+    <CodeGroup>
+
+    ```bash npm
+    npm install
+    ```
+
+    ```bash yarn
+    yarn install
+    ```
+
+    ```bash pnpm
+    pnpm install
+    ```
+
+    </CodeGroup>
+  </Step>
+
+  <Step title="Start the development server">
+    Launch Vite's dev server with hot module replacement enabled:
 
     ```bash
-    your-cli init
+    npm run dev
     ```
+
+    Vite starts on **port 5173** by default. Open [http://localhost:5173](http://localhost:5173) in your browser to see the full animated portfolio.
+
+    <Tip>
+      Because the app uses hash-based routing, the inline script in `index.html` will automatically redirect `http://localhost:5173` to `http://localhost:5173/#/` on first load. This is expected behaviour — not an error.
+    </Tip>
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+
+  <Step title="Build for production">
+    When you're ready to produce a deployable artefact, run:
 
     ```bash
-    your-cli start
+    npm run build
     ```
+
+    Vite bundles and minifies the application into the `dist/` directory. The output includes `index.html`, the pre-built `assets/main.js` and `assets/main.css`, and all pre-loaded component modules.
   </Step>
+
+  <Step title="Preview the production build">
+    Before deploying, serve the `dist/` output locally with Vite's built-in preview server to verify the production bundle behaves identically to the dev server:
+
+    ```bash
+    npm run preview
+    ```
+
+    The preview server also starts on port 4173 by default. Visit [http://localhost:4173](http://localhost:4173) to confirm everything looks correct.
+  </Step>
+
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Deploying to GitHub Pages
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+Digital Coven is configured for zero-configuration deployment to GitHub Pages or any static file host.
+
+Two mechanisms make this work:
+
+1. **`.nojekyll`** — A `.nojekyll` file is committed at the repository root. This tells GitHub Pages to skip Jekyll processing, which would otherwise strip files whose names begin with an underscore (including Vite's `_` prefixed chunk files).
+
+2. **Hash-routing redirect script** — `index.html` contains the following inline script that runs before React mounts:
+
+    ```html
+    <script>
+      window.__STATIC_PAGE_ROUTE__ = "/";
+
+      (function () {
+        if (!window.location.hash || window.location.hash === "#") {
+          window.location.replace(
+            window.location.pathname +
+            window.location.search +
+            "#/"
+          );
+        }
+      })();
+    </script>
+    ```
+
+    Because all navigation is hash-prefixed (`/#/about`, `/#/projects`, etc.), the static host only ever needs to serve the single `index.html` file — no server-side rewrite rules or `404.html` tricks are required.
+
+<Note>
+  After running `npm run build`, copy the contents of `dist/` (including `.nojekyll`) to your GitHub Pages branch or static hosting root. The app will serve correctly from any path depth.
+</Note>
+
+## Available Scripts
+
+| Command | Description |
+|---|---|
+| `npm run dev` | Start Vite dev server on `localhost:5173` with HMR |
+| `npm run build` | Bundle and minify to `dist/` |
+| `npm run preview` | Serve `dist/` locally on `localhost:4173` |

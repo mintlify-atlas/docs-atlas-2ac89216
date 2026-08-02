@@ -1,0 +1,161 @@
+---
+title: "Layout Shell: Header, Navigation, and Page Transitions"
+sidebarTitle: "Layout"
+description: "The Digital Coven AppShell wraps every route with a fixed header, logo, nav links, AnimatePresence page transitions, and persistent background components."
+---
+
+The `AppShell` component, defined in `assets/main.js`, is the invisible backbone of every page on Digital Coven. It mounts once for the lifetime of the app and is responsible for four persistent concerns: rendering the `CustomCursor` and `BackgroundAtmosphere` overlays, displaying the fixed site header with logo and navigation, and wrapping the active route's content in an `AnimatePresence`-powered `motion.main` so that every page transition is a smooth, blurred fade. Because `AppShell` sits directly inside the React Router context, it has access to `useLocation` and can mark the currently active nav link in real time.
+
+## Component Tree
+
+When the app boots, `AppShell` renders the following structure in order:
+
+```jsx
+<div className="min-h-screen text-slate-200 selection:bg-magenta selection:text-void flex flex-col">
+  <CustomCursor />
+  <BackgroundAtmosphere />
+
+  <header className="fixed top-0 left-0 right-0 z-50 p-6 md:p-8
+                     flex justify-between items-center mix-blend-difference">
+    {/* DC logo + desktop nav */}
+  </header>
+
+  <AnimatePresence mode="wait">
+    <motion.main key={location.pathname} ...>
+      {children}  {/* active route content */}
+    </motion.main>
+  </AnimatePresence>
+</div>
+```
+
+<Note>
+`CustomCursor` and `BackgroundAtmosphere` are rendered **before** the header and main content in the DOM so they sit below all interactive elements in the stacking context. `CustomCursor` is promoted to `z-[9999]` and `BackgroundAtmosphere` is pushed to `z-[-1]` — their own positioning handles the layering, not their DOM order.
+</Note>
+
+## Header
+
+The header is `position: fixed` at the top of the viewport (`top-0 left-0 right-0`), elevated to `z-50`, and uses `mix-blend-difference` to create an automatic contrast inversion effect against any background content that scrolls beneath it. This means the DC logo and nav links always remain legible regardless of the atmospheric colors moving behind them — they appear to "cut through" the background with inverted colours rather than relying on a solid backdrop.
+
+```jsx
+<header
+  className="fixed top-0 left-0 right-0 z-50 p-6 md:p-8
+             flex justify-between items-center mix-blend-difference"
+>
+  <Link
+    to="/"
+    className="font-display text-3xl font-bold tracking-widest text-neon-lime
+               drop-shadow-[0_0_8px_var(--neon-lime)]
+               hover:text-cyan hover:drop-shadow-[0_0_12px_var(--cyan)]
+               transition-all duration-300"
+  >
+    DC
+  </Link>
+
+  <nav className="hidden md:flex gap-6 font-mono text-sm">
+    {navLinks.map((link) => (
+      <Link
+        key={link.path}
+        to={link.path}
+        className={`transition-colors duration-300
+          hover:text-cyan hover:drop-shadow-[0_0_5px_var(--cyan)]
+          ${
+            location.pathname === link.path
+              ? "text-electric-purple drop-shadow-[0_0_5px_var(--electric-purple)]"
+              : "text-slate-400"
+          }`}
+      >
+        {link.label}
+      </Link>
+    ))}
+  </nav>
+</header>
+```
+
+<Tip>
+The nav is hidden on mobile (`hidden md:flex`). Digital Coven does not currently ship a hamburger menu — the layout assumes a desktop-first experience. Adding one would require a separate mobile nav component and a state toggle on the header.
+</Tip>
+
+## Navigation Links
+
+The nav array is defined as a constant directly above `AppShell` in `main.js`:
+
+```jsx
+const navLinks = [
+  { path: '/about',        label: '/about'        },
+  { path: '/projects',     label: '/projects'     },
+  { path: '/skills',       label: '/skills'       },
+  { path: '/writing',      label: '/writing'      },
+  { path: '/case-studies', label: '/case-studies' },
+  { path: '/contact',      label: '/contact'      },
+];
+```
+
+Each link's `label` intentionally includes a leading `/` to reinforce the terminal/path aesthetic of the site. The active link is detected with a `location.pathname === link.path` comparison supplied by React Router's `useLocation` hook, and styled with `text-electric-purple drop-shadow-[0_0_5px_var(--electric-purple)]`.
+
+## Page Transitions
+
+`AnimatePresence` wraps a single `motion.main` whose `key` is set to `location.pathname`. When the route changes, Framer Motion detects the key change and plays the exit animation on the outgoing page before mounting the incoming one. The `mode="wait"` prop ensures the exit completes fully before the enter begins, preventing overlap between pages.
+
+```jsx
+<AnimatePresence mode="wait">
+  <motion.main
+    key={location.pathname}
+    initial={{ opacity: 0, filter: 'blur(10px)', y: 20 }}
+    animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+    exit={{   opacity: 0, filter: 'blur(10px)', y: -20 }}
+    transition={{ duration: 0.5, ease: 'easeInOut' }}
+    className="flex-grow pt-32 px-6 md:px-12 lg:px-24 pb-24 relative z-10"
+  >
+    {children}
+  </motion.main>
+</AnimatePresence>
+```
+
+The enter animates upward (`y: 20 → 0`) while the exit moves upward and out (`y: 0 → -20`), giving a continuous vertical scroll feel. Both directions pass through a `blur(10px)` → `blur(0px)` transition that keeps the occult soft-focus aesthetic consistent.
+
+| Prop | Enter | Exit |
+|---|---|---|
+| `opacity` | `0 → 1` | `1 → 0` |
+| `filter` | `blur(10px) → blur(0px)` | `blur(0px) → blur(10px)` |
+| `y` | `20 → 0` | `0 → -20` |
+| `duration` | 0.5s | 0.5s |
+
+## Adding a New Route
+
+<Steps>
+  ### Create the page component
+
+  Add a new page component in `main.js` (or import it from a dedicated file). For example:
+
+  ```jsx
+  function ServicesPage() {
+    return (
+      <div className="max-w-4xl mx-auto py-12">
+        <h1 className="font-display text-5xl text-neon-lime mb-4">Services</h1>
+      </div>
+    );
+  }
+  ```
+
+  ### Register the route
+
+  Inside the `Routes` block in the root `App` component, add a `Route`:
+
+  ```jsx
+  <Route path="/services" element={<ServicesPage />} />
+  ```
+
+  ### Add the nav link
+
+  Append an entry to the `navLinks` array:
+
+  ```jsx
+  { path: '/services', label: '/services' },
+  ```
+
+  The active-link highlight and page transition will apply automatically — no further changes needed.
+</Steps>
+
+<Note>
+The `motion.main` wrapper and its transition config live in `AppShell`. All child route components receive the transition for free; individual pages do not need to implement their own enter/exit animations unless they want per-element choreography on top of the shell transition.
+</Note>

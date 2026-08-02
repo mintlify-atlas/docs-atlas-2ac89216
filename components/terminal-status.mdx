@@ -1,0 +1,228 @@
+---
+title: "TerminalStatus: Animated Terminal Readout Display"
+sidebarTitle: "Terminal Status"
+description: "TerminalStatus renders a mock terminal status block on the home page, displaying animated system-status-style text lines with a monospace font and neon-lime glow."
+---
+
+`TerminalStatus` is a fake operating-system terminal window that narrates the portfolio's existence in deadpan status-log format. It sits in the lower section of the home page and prints eight pre-written status lines one at a time, simulating a real boot sequence or deployment pipeline — complete with a `WARN` message about an unused variable called `sleep`. The component blends dark humour with the coven's retro-terminal aesthetic.
+
+## Visual Role on the Home Page
+
+`TerminalStatus` renders **fourth** in the home page stack, between `CardsOfFate` and `ProjectMarquee`. Centered with a `max-w-4xl` constraint, it acts as a palate cleanser between the navigation cards and the scrolling footer ticker — an intimate, readable moment before the page ends.
+
+**Home page render order:**
+
+| Position | Component |
+|---|---|
+| 1 | `SummoningCircle` |
+| 2 | `HeroText` |
+| 3 | `CardsOfFate` |
+| **4** | **`TerminalStatus`** |
+| 5 | `ProjectMarquee` |
+
+## Props
+
+`TerminalStatus` accepts no props. The status lines are defined as a module-level constant array:
+
+```jsx
+const STATUS_LINES = [
+  "> Initializing reality engine...",
+  "> Loading dependencies: coffee, lo-fi beats, existential dread",
+  "> Compiling spells...",
+  "WARN: Unused variable 'sleep' detected.",
+  "> Connecting to void...",
+  "> Connection established. Latency: 666ms",
+  "> Currently casting: Refactoring legacy code",
+  "> Awaiting next command...",
+];
+```
+
+<Note>
+  To change the terminal output, edit `STATUS_LINES` in `TerminalStatus.js`. Lines beginning with `WARN` are automatically rendered in yellow (`text-yellow-400`) — all other lines inherit the default `text-neon-lime`.
+</Note>
+
+## Framer Motion Animations
+
+### Scroll-triggered panel entrance
+
+The entire terminal window fades in and scales up when it enters the viewport:
+
+```jsx
+// motion.div — terminal window wrapper
+initial={{ opacity: 0, scale: 0.95 }}
+whileInView={{ opacity: 1, scale: 1 }}
+viewport={{ once: true }}
+```
+
+`viewport: { once: true }` ensures the animation plays only once.
+
+### Per-line entrance
+
+Each line appended to the display animates in from the left:
+
+```jsx
+// motion.div — per line
+initial={{ opacity: 0, x: -10 }}
+animate={{ opacity: 1, x: 0 }}
+```
+
+No explicit `transition` duration is set for line entrances, so Framer Motion uses its default spring.
+
+### Blinking cursor
+
+After all eight lines have printed, an idle cursor block appears and blinks on a 0.8-second cycle:
+
+```jsx
+// motion.div — idle cursor
+animate={{ opacity: [1, 0] }}
+transition={{ repeat: Infinity, duration: 0.8 }}
+className="w-3 h-5 bg-neon-lime mt-1"
+```
+
+The cursor is only rendered once `displayedLines.length === STATUS_LINES.length`, so it appears only after the final status line has been added.
+
+## Line-by-Line Printing — `useEffect` + `setInterval`
+
+A single `useState` value — `displayedLines` — holds the array of lines currently shown. A `setInterval` running every **800 ms** appends the next line from `STATUS_LINES` until all eight are displayed, then clears itself:
+
+```jsx
+useEffect(() => {
+  let index = 0;
+  const interval = setInterval(() => {
+    if (index < STATUS_LINES.length) {
+      setDisplayedLines(prev => [...prev, STATUS_LINES[index]]);
+      index++;
+    } else {
+      clearInterval(interval);
+    }
+  }, 800);
+  return () => clearInterval(interval);
+}, []);
+```
+
+The cleanup function ensures the interval is cleared if the component unmounts before all lines have printed.
+
+## CSS Classes and Color Tokens
+
+### Outer section wrapper
+
+```css
+relative z-10 max-w-4xl mx-auto py-12
+```
+
+### Terminal window (`motion.div`)
+
+```css
+rounded-lg
+border border-neon-lime/30
+bg-[#0a0a0a]
+shadow-[0_0_20px_rgba(163,255,18,0.1)]
+overflow-hidden
+crt-overlay relative
+```
+
+`crt-overlay` is a custom Tailwind utility that applies a scanline or phosphor-screen overlay effect, reinforcing the retro-CRT aesthetic. The background `#0a0a0a` (near-black with a warm undertone) differs from the site's standard `--void` black to simulate an older display.
+
+### Title bar
+
+```css
+bg-[#1a1a1a]
+border-b border-neon-lime/20
+px-4 py-2
+flex items-center gap-2
+```
+
+The title bar mimics a macOS-style window chrome with three coloured dots and a filename label:
+
+```jsx
+<div className="w-3 h-3 rounded-full bg-red-500/80" />
+<div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+<div className="w-3 h-3 rounded-full bg-green-500/80" />
+<span className="ml-4 font-mono text-xs text-slate-500">status.exe</span>
+```
+
+### Output area
+
+```css
+p-6 font-mono text-sm md:text-base
+text-neon-lime
+min-h-[250px]
+flex flex-col gap-2
+```
+
+### `WARN` line override
+
+Any line that starts with `"WARN"` receives the class `text-yellow-400` instead of inheriting `text-neon-lime`:
+
+```jsx
+className={line.startsWith("WARN") ? "text-yellow-400" : ""}
+```
+
+<CodeGroup>
+```jsx Full component structure
+<div className="relative z-10 max-w-4xl mx-auto py-12">
+  <motion.div
+    initial={{ opacity: 0, scale: 0.95 }}
+    whileInView={{ opacity: 1, scale: 1 }}
+    viewport={{ once: true }}
+    className="rounded-lg border border-neon-lime/30 bg-[#0a0a0a]
+               shadow-[0_0_20px_rgba(163,255,18,0.1)]
+               overflow-hidden crt-overlay relative"
+  >
+    {/* Title bar */}
+    <div className="bg-[#1a1a1a] border-b border-neon-lime/20 px-4 py-2 flex items-center gap-2">
+      <div className="w-3 h-3 rounded-full bg-red-500/80" />
+      <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
+      <div className="w-3 h-3 rounded-full bg-green-500/80" />
+      <span className="ml-4 font-mono text-xs text-slate-500">status.exe</span>
+    </div>
+
+    {/* Output area */}
+    <div className="p-6 font-mono text-sm md:text-base text-neon-lime min-h-[250px] flex flex-col gap-2">
+      {displayedLines.map((line, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          className={line.startsWith("WARN") ? "text-yellow-400" : ""}
+        >
+          {line}
+        </motion.div>
+      ))}
+      {displayedLines.length === STATUS_LINES.length && (
+        <motion.div
+          animate={{ opacity: [1, 0] }}
+          transition={{ repeat: Infinity, duration: 0.8 }}
+          className="w-3 h-5 bg-neon-lime mt-1"
+        />
+      )}
+    </div>
+  </motion.div>
+</div>
+```
+
+```css Color tokens used
+--neon-lime     /* primary text color, cursor color */
+--electric-purple  /* not used directly — inherited from site theme */
+
+/* Literal hex values used */
+#0a0a0a   /* terminal background */
+#1a1a1a   /* title bar background */
+rgba(163, 255, 18, 0.1)   /* box-shadow glow (neon-lime at 10%) */
+```
+</CodeGroup>
+
+## Interactive Behaviour
+
+`TerminalStatus` has no hover or click handlers. It is entirely time-driven:
+
+| Time | Event |
+|---|---|
+| Component mounts | `setInterval` begins, 800 ms tick |
+| Every 800 ms | One new status line appends and animates in |
+| After ~6.4 s (8 lines × 800 ms) | Interval clears; idle cursor appears |
+| Scroll into view | Terminal window fades in and scales from `0.95` to `1.0` |
+
+<Tip>
+  The 800 ms interval means the full readout takes approximately 6.4 seconds to complete. If the user scrolls past `TerminalStatus` before it finishes printing, the `whileInView` entrance has already fired (`once: true`), but the lines continue printing in the background via `setInterval` — visible again if the user scrolls back up.
+</Tip>

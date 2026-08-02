@@ -1,0 +1,314 @@
+---
+title: "Contact Page: Animated Form and Guestbook"
+sidebarTitle: "Contact"
+description: "The Contact page features a floating-label form with a Cast Spell submit button, an animated success state, social links, and a Ledger guestbook panel."
+---
+
+The Contact page — titled **Summon Me** — reframes a standard contact form as a ritual invocation. Each form field has a floating label that rises and shrinks on focus using CSS peer classes. The submit button reads **Cast Spell**, transitions to **Casting...** during the async delay, and then the entire form is replaced by an animated success card. The right panel shows **The Ledger** — a mock guestbook with three sample entries.
+
+## Route
+
+```
+/contact
+```
+
+## Page Header
+
+```jsx
+<motion.h1
+  initial={{ opacity: 0, x: -20 }}
+  animate={{ opacity: 1, x: 0 }}
+  className="font-display text-5xl md:text-7xl text-neon-lime glow-text-lime mb-4"
+>
+  Summon Me
+</motion.h1>
+<p className="font-mono text-slate-400 mb-12">
+  Send a raven, or just use this form.
+</p>
+```
+
+This is the only page header that uses an `x` axis entrance animation (`x: -20 → 0`) instead of the standard `y` axis slide-up. The title uses `text-neon-lime` with `glow-text-lime`.
+
+## Page Layout
+
+The page uses a two-column grid layout on large screens:
+
+```html
+<div class="max-w-5xl mx-auto py-12 grid grid-cols-1 lg:grid-cols-2 gap-16">
+  <!-- Left: Form panel -->
+  <!-- Right: Guestbook panel -->
+</div>
+```
+
+On mobile (`grid-cols-1`), the form stacks above the guestbook. On `lg:` and above, they sit side by side with `gap-16` between them.
+
+## State
+
+The page uses two `useState` hooks:
+
+```js
+const [isSubmitting, setIsSubmitting] = useState(false);
+const [isSuccess,    setIsSuccess]    = useState(false);
+```
+
+- `isSubmitting` disables the submit button and changes its label to **Casting...**
+- `isSuccess` hides the form entirely and renders the success card
+
+## Submit Handler
+
+```js
+const handleSubmit = (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  setTimeout(() => {
+    setIsSubmitting(false);
+    setIsSuccess(true);
+  }, 1500);
+};
+```
+
+After a `1500ms` delay, the submitting state clears and the success state activates. There is no real network request in the current implementation — it is a simulated async flow.
+
+## Form Fields
+
+The form contains three fields, all using the same floating-label pattern via Tailwind's `peer` modifier classes.
+
+### [Identifier / Name]
+
+```jsx
+<div className="relative group">
+  <input
+    type="text"
+    required
+    placeholder="Your Name"
+    className="w-full bg-transparent border-b-2 border-slate-700 py-3 px-2
+               font-mono text-slate-200 focus:outline-none focus:border-neon-lime
+               transition-colors peer placeholder-transparent"
+  />
+  <label
+    className="absolute left-2 top-3 font-mono text-slate-500 text-sm transition-all
+               peer-focus:-top-4 peer-focus:text-xs peer-focus:text-neon-lime
+               peer-valid:-top-4  peer-valid:text-xs  peer-valid:text-neon-lime"
+  >
+    [Identifier / Name]
+  </label>
+</div>
+```
+
+### [Return Address / Email]
+
+```jsx
+<div className="relative group">
+  <input
+    type="email"
+    required
+    placeholder="Your Email"
+    className="w-full bg-transparent border-b-2 border-slate-700 py-3 px-2
+               font-mono text-slate-200 focus:outline-none focus:border-neon-lime
+               transition-colors peer placeholder-transparent"
+  />
+  <label
+    className="absolute left-2 top-3 font-mono text-slate-500 text-sm transition-all
+               peer-focus:-top-4 peer-focus:text-xs peer-focus:text-neon-lime
+               peer-valid:-top-4  peer-valid:text-xs  peer-valid:text-neon-lime"
+  >
+    [Return Address / Email]
+  </label>
+</div>
+```
+
+### [Incantation / Message]
+
+The textarea field uses a slightly different label positioning because it has a top border on all sides (not just the bottom):
+
+```jsx
+<div className="relative group pt-4">
+  <textarea
+    required
+    rows={4}
+    placeholder="Your Message"
+    className="w-full bg-transparent border-2 border-slate-700 p-3
+               font-mono text-slate-200 focus:outline-none focus:border-neon-lime
+               transition-colors peer placeholder-transparent resize-none"
+  />
+  <label
+    className="absolute left-3 top-7 font-mono text-slate-500 text-sm transition-all
+               peer-focus:top-0 peer-focus:bg-void peer-focus:px-1 peer-focus:text-xs peer-focus:text-neon-lime
+               peer-valid:top-0  peer-valid:bg-void  peer-valid:px-1  peer-valid:text-xs  peer-valid:text-neon-lime"
+  >
+    [Incantation / Message]
+  </label>
+</div>
+```
+
+The textarea label animates to `top: 0` (overlapping the border) and adds `bg-void px-1` to create a "cut-out" effect where the label sits in a gap in the border line.
+
+## Floating Label Animation
+
+All three labels use the CSS `peer` pattern — the `<input>` or `<textarea>` gets `peer` and the `<label>` uses `peer-focus:` and `peer-valid:` variants:
+
+| State | Label Position | Font Size | Color |
+|---|---|---|---|
+| Default (empty, unfocused) | `top: 12px, left: 8px` | `text-sm` | `text-slate-500` |
+| Focused | `-top-4` (text/email) or `top-0` (textarea) | `text-xs` | `text-neon-lime` |
+| Valid (has content) | Same as focused | `text-xs` | `text-neon-lime` |
+
+`placeholder-transparent` hides the native placeholder text, leaving only the floating label visible.
+
+## Submit Button
+
+```jsx
+<button
+  type="submit"
+  disabled={isSubmitting}
+  className="w-full py-4 border-2 border-neon-lime text-neon-lime font-display text-xl
+             hover:bg-neon-lime hover:text-void transition-all duration-300
+             relative overflow-hidden group disabled:opacity-50"
+>
+  <span className="relative z-10">
+    {isSubmitting ? "Casting..." : "Cast Spell"}
+  </span>
+  {/* Slide-in fill on hover */}
+  <div className="absolute inset-0 bg-neon-lime transform scale-x-0
+                  group-hover:scale-x-100 transition-transform origin-left" />
+</button>
+```
+
+The button uses a CSS reveal trick: a `bg-neon-lime` overlay `div` starts with `scale-x-0` and expands to `scale-x-100` on hover via `origin-left`, creating a left-to-right fill sweep. The text sits above it on `z-10`.
+
+- **Default**: `border-neon-lime`, `text-neon-lime`, transparent background
+- **Hover**: `bg-neon-lime` fill sweeps left-to-right; text color switches to `text-void`
+- **Submitting**: `disabled:opacity-50`, label changes to **Casting...**
+
+## Success State
+
+When `isSuccess` is `true`, the form is replaced by:
+
+```jsx
+<motion.div
+  initial={{ opacity: 0, scale: 0.9 }}
+  animate={{ opacity: 1, scale: 1 }}
+  className="bg-neon-lime/10 border border-neon-lime p-8 text-center"
+>
+  <div className="text-4xl mb-4">✨</div>
+  <h3 className="font-display text-2xl text-neon-lime mb-2">
+    Message Cast Successfully
+  </h3>
+  <p className="font-mono text-sm text-slate-300">
+    I will consult the oracles and reply shortly.
+  </p>
+</motion.div>
+```
+
+The success card scales in from `0.9` to `1` with `opacity: 0 → 1`.
+
+<Steps>
+  <Step title="User fills out the form">
+    All three fields are `required`. The floating labels rise and turn `neon-lime` as fields gain focus and valid content.
+  </Step>
+  <Step title="User clicks Cast Spell">
+    `handleSubmit` fires, `isSubmitting` becomes `true`. The button shows **Casting...** at `50%` opacity.
+  </Step>
+  <Step title="1500ms delay">
+    `setTimeout` resolves, `isSubmitting` resets to `false`, `isSuccess` becomes `true`.
+  </Step>
+  <Step title="Success card appears">
+    The form unmounts and the `✨ Message Cast Successfully` card scales in via Framer Motion.
+  </Step>
+</Steps>
+
+## Social Links
+
+Below the form (or success card), three social link icons are rendered:
+
+```jsx
+{["GitHub", "LinkedIn", "Email"].map((platform) => (
+  <a href="#" key={platform} className="group flex flex-col items-center gap-2">
+    <div className="w-12 h-12 border border-slate-700 rounded-full flex items-center justify-center
+                    text-slate-400 group-hover:border-cyan group-hover:text-cyan
+                    group-hover:shadow-[0_0_15px_rgba(34,211,238,0.3)] transition-all duration-300">
+      {platform === "GitHub"   && <span className="font-display text-xl">⎊</span>}
+      {platform === "LinkedIn" && <span className="font-display text-xl">⟁</span>}
+      {platform === "Email"    && <span className="font-display text-xl">✉</span>}
+    </div>
+    <span className="font-mono text-xs text-slate-500 group-hover:text-cyan">
+      {platform}
+    </span>
+  </a>
+))}
+```
+
+| Platform | Glyph | Hover Color |
+|---|---|---|
+| GitHub | ⎊ | `text-cyan`, `border-cyan`, cyan glow |
+| LinkedIn | ⟁ | `text-cyan`, `border-cyan`, cyan glow |
+| Email | ✉ | `text-cyan`, `border-cyan`, cyan glow |
+
+## The Ledger (Guestbook)
+
+The right panel is a styled guestbook with three mock entries:
+
+```jsx
+<div className="bg-[#0a0a0a] border border-electric-purple/30 p-8 relative overflow-hidden">
+  <div className="absolute top-0 right-0 w-32 h-32 bg-electric-purple/10 blur-3xl" />
+  <h3 className="font-display text-2xl text-electric-purple mb-8 border-b border-electric-purple/20 pb-4">
+    The Ledger (Guestbook)
+  </h3>
+  {/* entries */}
+</div>
+```
+
+### Guestbook Entries
+
+```js
+const entries = [
+  {
+    name: "Senior Dev",
+    role: "Tech Lead",
+    msg:  "The code is clean, but the aesthetic is concerningly dark. 10/10.",
+    time: "2 hours ago",
+  },
+  {
+    name: "Recruiter",
+    role: "Talent Acquisition",
+    msg:  "Impressive portfolio! Do you have 10 years of experience in React 18?",
+    time: "1 day ago",
+  },
+  {
+    name: "Anonymous",
+    role: "Wandering Spirit",
+    msg:  "I came for the spells, stayed for the clean architecture.",
+    time: "3 days ago",
+  },
+];
+```
+
+Each entry animates in from the right with a staggered delay:
+
+```jsx
+<motion.div
+  initial={{ opacity: 0, x: 20 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ delay: index * 0.2 + 0.5 }}
+  className="bg-deep-void p-4 border-l-2 border-electric-purple"
+>
+  <div className="flex justify-between items-start mb-2">
+    <div>
+      <span className="font-bold text-slate-200 font-mono text-sm">{entry.name}</span>
+      <span className="text-electric-purple text-xs ml-2">[{entry.role}]</span>
+    </div>
+    <span className="text-slate-600 text-xs font-mono">{entry.time}</span>
+  </div>
+  <p className="text-slate-400 text-sm font-mono">{entry.msg}</p>
+</motion.div>
+```
+
+Entries use `border-l-2 border-electric-purple` as a left accent, with `bg-deep-void` fill. The `role` is displayed in brackets: `[Tech Lead]`, `[Talent Acquisition]`, `[Wandering Spirit]`.
+
+<Note>
+  The `0.5` base delay on guestbook entries (`delay: index * 0.2 + 0.5`) ensures they begin animating only after the page header has finished its own entrance animation.
+</Note>
+
+<Tip>
+  The guestbook panel has a `overflow-hidden` container so the decorative `bg-electric-purple/10 blur-3xl` corner glow blob does not bleed outside the panel boundary.
+</Tip>

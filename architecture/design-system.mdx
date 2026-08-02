@@ -1,0 +1,248 @@
+---
+title: "Digital Coven Design System and Color Palette"
+sidebarTitle: "Design System"
+description: "The complete Digital Coven design system: CSS custom properties, Tailwind color tokens, typography scales, glow utilities, and the CRT overlay effect."
+---
+
+Digital Coven's visual language is built on a tight set of CSS custom properties declared in `:root`, surfaced as Tailwind utility classes via a custom theme extension. Every color, every glow, and every typographic choice reinforces a single aesthetic directive: a dark terminal haunted by neon light. The entire design system ships in `assets/main.css` — one compiled file that covers Tailwind's reset, all utility classes, and the bespoke components defined below.
+
+## Color palette
+
+Six CSS custom properties define the full chromatic vocabulary of the site. They are declared in `:root` at the bottom of `assets/main.css`, after the Tailwind utility layer:
+
+```css
+/* assets/main.css — :root block */
+:root {
+  --void:            #08060d;
+  --deep-void:       #13091f;
+  --electric-purple: #a855f7;
+  --neon-lime:       #a3ff12;
+  --magenta:         #ff2bd6;
+  --cyan:            #22d3ee;
+}
+```
+
+| Token | Hex | Role |
+|---|---|---|
+| `--void` | `#08060d` | Page background — near-black with a faint violet undertone |
+| `--deep-void` | `#13091f` | Elevated surfaces, cards, sidebar panels |
+| `--electric-purple` | `#a855f7` | Primary accent — active nav links, headings, scroll indicators |
+| `--neon-lime` | `#a3ff12` | Secondary accent — the `DC` logotype, CTA buttons, home page hero |
+| `--magenta` | `#ff2bd6` | Highlight accent — selection background, border emphasis, error states |
+| `--cyan` | `#22d3ee` | Tertiary accent — hover states, timeline connectors, code borders |
+
+## Tailwind color mappings
+
+The custom properties are registered as Tailwind color tokens so every standard Tailwind variant prefix works:
+
+| Custom property | Text class | Background class | Border class |
+|---|---|---|---|
+| `--void` | `text-void` | `bg-void` | — |
+| `--deep-void` | — | `bg-deep-void` | — |
+| `--electric-purple` | `text-electric-purple` | `bg-electric-purple` | `border-electric-purple` |
+| `--neon-lime` | `text-neon-lime` | `bg-neon-lime` | `border-neon-lime` |
+| `--magenta` | `text-magenta` | `bg-magenta` | `border-magenta` |
+| `--cyan` | `text-cyan` | `bg-cyan` | `border-cyan` |
+
+Opacity modifiers are fully supported — the compiled stylesheet includes variants such as `bg-electric-purple/10`, `border-cyan/30`, and `text-neon-lime/80` throughout the component layer.
+
+## Typography
+
+Digital Coven uses exactly two typefaces, loaded from Google Fonts via an `@import` at the top of `assets/main.css`:
+
+```css
+@import "https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap";
+```
+
+### Cinzel Decorative — display / headings
+
+```css
+/* Applied via Tailwind utility */
+.font-display {
+  font-family: Cinzel Decorative, serif;
+}
+
+/* Also applied globally to all heading elements */
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: Cinzel Decorative, serif;
+}
+```
+
+Cinzel Decorative is a classical Roman titling typeface. Its wide letterforms and high-contrast strokes contrast deliberately against the dark background, reading as carved or engraved rather than printed. It is used for every major heading (`font-display text-5xl md:text-7xl`) and the `DC` logotype in the header.
+
+### JetBrains Mono — mono / body
+
+```css
+/* Applied via Tailwind utility */
+.font-mono {
+  font-family: JetBrains Mono, monospace;
+}
+
+/* Also applied as the document default */
+body {
+  font-family: JetBrains Mono, monospace;
+}
+
+/* And to code/pre elements via the Tailwind preflight override */
+code, kbd, samp, pre {
+  font-family: JetBrains Mono, monospace;
+}
+```
+
+JetBrains Mono is used as the **body font** — all paragraph text, labels, nav links, form inputs, and UI captions use `font-mono`. This blurs the line between prose and code, reinforcing the occult-terminal aesthetic.
+
+<Tip>
+Because JetBrains Mono is the document default, you only need `font-mono` when overriding a parent that has been set to `font-display`. All body-level text inherits the monospace face automatically.
+</Tip>
+
+## Glow text utilities
+
+Three bespoke utility classes apply layered `text-shadow` glows that simulate neon phosphor emission. They are defined at the end of `assets/main.css`:
+
+```css
+.glow-text-purple {
+  text-shadow:
+    0 0 10px rgba(168, 85, 247, 0.8),
+    0 0 20px rgba(168, 85, 247, 0.4);
+}
+
+.glow-text-lime {
+  text-shadow:
+    0 0 10px rgba(163, 255, 18, 0.8),
+    0 0 20px rgba(163, 255, 18, 0.4);
+}
+
+.glow-text-cyan {
+  text-shadow:
+    0 0 10px rgba(34, 211, 238, 0.8),
+    0 0 20px rgba(34, 211, 238, 0.4);
+}
+```
+
+Each utility uses two shadow layers: a tight inner glow at 80% opacity for a hard neon core, and a wider outer halo at 40% opacity for the atmospheric bleed. Usage follows a strict color-to-page convention:
+
+| Class | Paired text color | Used on |
+|---|---|---|
+| `glow-text-purple` | `text-electric-purple` | About page (`Origin Story`), Case Studies headings |
+| `glow-text-lime` | `text-neon-lime` | Projects page (`Grimoire of Repos`), Contact page (`Summon Me`) |
+| `glow-text-cyan` | `text-cyan` | Writing page (`The Scrolls`) |
+
+## CRT overlay effect
+
+Any element can receive a retro scanline treatment by adding the `crt-overlay` class. The effect is implemented entirely via a `::before` pseudo-element, requiring only `position: relative` (or any positioned ancestor) on the host element:
+
+```css
+.crt-overlay::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background:
+    linear-gradient(
+      #12101000 50%,
+      #00000040 50%
+    ),
+    linear-gradient(
+      90deg,
+      #ff00000f,
+      #00ff0005,
+      #0000ff0f
+    );
+  z-index: 2;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+}
+```
+
+The first `linear-gradient` creates horizontal scanlines — alternating fully-transparent and 25%-opaque black bands at a `2px` pitch. The second gradient adds a faint RGB color-aberration fringe along the vertical axis (red, green, blue sub-pixel bleed), mimicking the phosphor triad of a cathode-ray tube.
+
+**Usage example** (from the Case Studies terminal block in `main.js`):
+
+```jsx
+<div className="bg-[#0a0a0a] border border-neon-lime/30 rounded p-6 crt-overlay font-mono text-sm text-neon-lime">
+  <div>$ jest --coverage</div>
+  <div className="text-slate-500">PASS src/components/Button.test.tsx</div>
+  {/* … */}
+</div>
+```
+
+<Note>
+`pointer-events: none` on the `::before` pseudo-element is essential — without it the scanline overlay would intercept all mouse events on the host element, breaking hover states and click handlers.
+</Note>
+
+## Custom scrollbar
+
+The scrollbar is styled using WebKit vendor-prefixed pseudo-elements to match the design system palette:
+
+```css
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--void);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--deep-void);
+  border: 1px solid var(--electric-purple);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--electric-purple);
+}
+```
+
+The thumb rests at `--deep-void` with a 1px `--electric-purple` border, creating the appearance of a glowing rail. On hover the thumb fills entirely with `--electric-purple`, pulsing the glow as the user drags.
+
+## Selection highlight
+
+Text selection is themed globally through Tailwind's selection variant on the root wrapper in `AppShell`:
+
+```jsx
+<div className="... selection:bg-magenta selection:text-void ...">
+```
+
+```css
+/* Compiled output in main.css */
+.selection\:bg-magenta::selection  { background-color: rgb(255 43 214); }
+.selection\:text-void::selection   { color: rgb(8 6 13); }
+```
+
+Selected text inverts to magenta background with near-black `--void` text — a high-contrast, on-brand highlight that replaces the browser default blue.
+
+## Header `mix-blend-difference`
+
+The fixed header element carries `mix-blend-difference`:
+
+```jsx
+<header className="fixed top-0 left-0 right-0 z-50 p-6 md:p-8
+                   flex justify-between items-center
+                   mix-blend-difference">
+```
+
+In `difference` blend mode, each pixel in the header is rendered as the absolute difference between the header's own color and the layer beneath it. This means:
+
+- Against the near-black page background, the `DC` logotype and nav links display close to their natural colors.
+- As the user scrolls page content under the header (light cards, bright illustrations), the header text **inverts** — lime on dark becomes dark on light — maintaining legibility without any JavaScript scroll listener.
+
+## Custom cursor
+
+The native cursor is hidden globally:
+
+```css
+/* assets/main.css */
+body {
+  cursor: none;
+}
+
+a, button, input, textarea, select, [role="button"] {
+  cursor: none !important;
+}
+```
+
+The `CustomCursor` component (rendered unconditionally inside `AppShell`) provides a replacement pointer. Setting `cursor: none !important` on interactive elements prevents the OS cursor from briefly reappearing when the user mouses over a link or button before the custom cursor component has re-positioned itself.

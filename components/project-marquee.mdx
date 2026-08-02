@@ -1,0 +1,178 @@
+---
+title: "ProjectMarquee: Horizontally Scrolling Project Ticker"
+sidebarTitle: "Project Marquee"
+description: "ProjectMarquee renders a continuously scrolling horizontal ticker of project names using Framer Motion's animate prop, styled with the coven neon color palette."
+---
+
+`ProjectMarquee` is the closing flourish of the Digital Coven home page — a horizontal ticker strip that endlessly scrolls through a list of project names against a dark void background, bordered top and bottom with an electric-purple hairline. It echoes the scrolling news tickers of the 80s and 90s retro-tech aesthetic while serving as a low-key portfolio inventory for visitors who glance at the bottom of the page.
+
+## Visual Role on the Home Page
+
+`ProjectMarquee` is the **last component rendered** on the home page, appearing below `TerminalStatus` and stretching edge-to-edge. Its `overflow-hidden` container and `border-y` treatment give it the visual weight of a footer band without being a traditional footer. The `py-24` padding makes it a standalone visual statement rather than a thin afterthought.
+
+**Home page render order:**
+
+| Position | Component |
+|---|---|
+| 1 | `SummoningCircle` |
+| 2 | `HeroText` |
+| 3 | `CardsOfFate` |
+| 4 | `TerminalStatus` |
+| **5** | **`ProjectMarquee`** |
+
+## Props
+
+`ProjectMarquee` accepts no props. The list of project names is a module-level constant:
+
+```jsx
+const PROJECT_NAMES = [
+  "Necronomicon.js",
+  "Void_Protocol",
+  "Soul_Catcher_API",
+  "Hex_Weaver_UI",
+  "Grimoire_DB",
+  "Phantom_Router",
+  // duplicated for seamless loop:
+  "Necronomicon.js",
+  "Void_Protocol",
+  "Soul_Catcher_API",
+];
+```
+
+The array contains **9 entries** — the first six unique names plus the first three repeated. This duplication is intentional: the scroll animation moves the track from `0%` to `-50%` on the x-axis, creating an infinite loop where the second half of the array visually matches the beginning of the first.
+
+<Note>
+  When adding new project names, add them to both the first half and duplicate them in the second half to preserve the seamless loop. The animation always scrolls exactly to `-50%` of the track width.
+</Note>
+
+## Framer Motion Animation
+
+The entire row of names is wrapped in a single `motion.div` that translates continuously along the x-axis:
+
+```jsx
+// motion.div — the scrolling track
+animate={{ x: ["0%", "-50%"] }}
+transition={{
+  duration: 20,       // one complete cycle every 20 seconds
+  ease: "linear",     // constant velocity — no easing
+  repeat: Infinity,   // loops forever
+}}
+className="flex gap-12 items-center"
+```
+
+`ease: "linear"` is critical here — any easing curve would cause the ticker to visibly accelerate or decelerate at the loop boundary, breaking the illusion of continuous motion.
+
+The `"0%"` → `"-50%"` range works because the track contains exactly twice the unique content: translating by half the track width brings the duplicate set into view, which is visually identical to the original set, creating a perfect loop.
+
+<Tip>
+  Framer Motion's `animate` with an array value (`["0%", "-50%"]`) is equivalent to defining keyframes at `0%` and `100%` of the animation timeline. Combined with `repeat: Infinity`, this creates continuous looping without defining explicit `keyframes`.
+</Tip>
+
+## CSS Classes and Color Tokens
+
+### Outer section wrapper
+
+```css
+relative z-10 py-24
+overflow-hidden
+border-y border-electric-purple/20
+bg-deep-void/50
+```
+
+`overflow-hidden` clips the scrolling content at the component's edges, preventing any horizontal page overflow. `border-y` adds a single-pixel top and bottom border in `electric-purple` at 20 % opacity — a subtle framing rule. `bg-deep-void/50` gives the strip a semi-transparent dark background, allowing any parallax atmosphere elements behind it to faintly bleed through.
+
+### Flex track wrapper
+
+```css
+flex whitespace-nowrap group
+```
+
+`whitespace-nowrap` is essential — without it, individual project names would wrap to new lines rather than remaining in a single horizontal row.
+
+### Per-name `<div>`
+
+```css
+font-display text-4xl md:text-6xl
+text-transparent bg-clip-text
+bg-gradient-to-r from-electric-purple to-magenta
+opacity-50
+hover:opacity-100
+hover:scale-110
+transition-all duration-300
+cursor-none
+```
+
+Each name uses a left-to-right gradient from `--electric-purple` to `--magenta`, with the text clipped to the gradient fill. At rest, names sit at 50 % opacity. On hover, they snap to full opacity and scale up by 10 %, drawing attention to the name under the cursor.
+
+`cursor-none` suppresses the browser's default cursor — the site uses a custom cursor component (`CustomCursor`) site-wide.
+
+<CodeGroup>
+```jsx Full component structure
+const PROJECT_NAMES = [
+  "Necronomicon.js", "Void_Protocol", "Soul_Catcher_API",
+  "Hex_Weaver_UI", "Grimoire_DB", "Phantom_Router",
+  "Necronomicon.js", "Void_Protocol", "Soul_Catcher_API",
+];
+
+function ProjectMarquee() {
+  return (
+    <div className="relative z-10 py-24 overflow-hidden border-y border-electric-purple/20 bg-deep-void/50">
+      <div className="flex whitespace-nowrap group">
+        <motion.div
+          className="flex gap-12 items-center"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 20, ease: "linear", repeat: Infinity }}
+        >
+          {PROJECT_NAMES.map((name, i) => (
+            <div
+              key={i}
+              className="font-display text-4xl md:text-6xl
+                         text-transparent bg-clip-text
+                         bg-gradient-to-r from-electric-purple to-magenta
+                         opacity-50 hover:opacity-100 hover:scale-110
+                         transition-all duration-300 cursor-none"
+            >
+              {name}
+            </div>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+```
+
+```css Color tokens used
+--electric-purple   /* gradient start, border color */
+--magenta           /* gradient end */
+--deep-void         /* strip background */
+```
+</CodeGroup>
+
+## Interactive Behaviour
+
+| Interaction | Effect |
+|---|---|
+| Automatic (continuous) | Track scrolls leftward at constant speed — one full loop every 20 seconds |
+| Hover over a name | Name fades from 50 % → 100 % opacity and scales up by 10 % (`hover:scale-110`) |
+| Click | No click handler; the names are purely decorative `<div>` elements |
+
+There is no pause-on-hover behaviour. The track continues scrolling even while a name is being hovered, maintaining the ticker's constant-motion character.
+
+## Usage Example
+
+```jsx
+import { ProjectMarquee } from "../components/home/ProjectMarquee";
+
+function HomePage() {
+  return (
+    <div className="relative w-full">
+      <SummoningCircle />
+      <HeroText />
+      <CardsOfFate />
+      <TerminalStatus />
+      <ProjectMarquee />  {/* ← renders last */}
+    </div>
+  );
+}
+```

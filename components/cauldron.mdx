@@ -1,0 +1,175 @@
+---
+title: "Cauldron: Drag-and-Drop Ingredient Brewing"
+sidebarTitle: "Cauldron"
+description: "Cauldron lets visitors drag ingredient chips into a Framer Motion SVG cauldron. Successfully dropped ingredients trigger an animated particle burst above the brew."
+---
+
+`Cauldron` is the interactive micro-game that lives at the bottom of the `/skills` page. Visitors drag flavour-text ingredient chips across the screen and drop them into a glowing SVG cauldron. Each successful drop removes the chip from the list, shows a pulsing brew indicator inside the cauldron, and fires a Framer Motion burst animation. The component is purely cosmetic but reinforces the occult-workshop theme of the portfolio.
+
+## Ingredient Data
+
+The fixed ingredients list `j` is defined at module scope:
+
+```js
+const j = ["React", "TypeScript", "Coffee", "CSS", "Tears"]
+```
+
+State is managed with a single `e` array (React `useState`) that tracks which ingredients have already been dropped. A chip is only rendered if its value is **not** present in `e`.
+
+## Drag Mechanics
+
+Each ingredient chip is a `motion.div` with Framer Motion's `drag` prop enabled:
+
+```jsx
+<motion.div
+  drag
+  dragConstraints={{ left: -300, right: 300, top: -300, bottom: 300 }}
+  onDragEnd={(event, info) => handleDrop(event, info, name)}
+  whileDrag={{ scale: 1.1, zIndex: 50 }}
+  className="px-4 py-2 bg-deep-void border border-magenta
+             text-magenta font-mono text-sm rounded cursor-none
+             shadow-[0_0_10px_rgba(255,43,214,0.2)]"
+>
+  {name}
+</motion.div>
+```
+
+| Prop              | Value                                        | Effect |
+|-------------------|----------------------------------------------|--------|
+| `drag`            | `true`                                       | Enables free drag in any direction |
+| `dragConstraints` | `{ left:-300, right:300, top:-300, bottom:300 }` | Constrains maximum travel from rest position |
+| `whileDrag`       | `{ scale: 1.1, zIndex: 50 }`                 | Enlarges chip and floats it above siblings while held |
+
+## Drop Zone Detection
+
+When a drag gesture ends, `onDragEnd` receives a `PointerInfo` object. The drop is valid when the pointer lands inside the cauldron region:
+
+```js
+const handleDrop = (event, info, name) => {
+  const inCauldronY = info.point.y > window.innerHeight - 300
+  const inCauldronX =
+    info.point.x > window.innerWidth / 2 - 150 &&
+    info.point.x < window.innerWidth / 2 + 150
+
+  if (inCauldronY && inCauldronX && !e.includes(name)) {
+    // Add to brewed list
+    s([...e, name])
+    // Fire burst animation
+    r.start({
+      opacity: [0, 0.8, 0],
+      scale:   [0.5, 2, 3],
+      y:       [0, -100, -200],
+      transition: { duration: 2 },
+    })
+  }
+}
+```
+
+**Drop zone bounds (viewport-relative):**
+
+| Axis | Condition |
+|------|-----------|
+| Y    | `pointer.y > window.innerHeight - 300` (bottom 300 px) |
+| X    | Within 150 px either side of the viewport horizontal centre |
+
+<Note>
+  The drop zone is based on the raw pointer position, not an element bounding rect. This means the exact hit area shifts with viewport dimensions. On very narrow screens the ±150 px horizontal window may be generous enough to cover most of the viewport width.
+</Note>
+
+## Burst Animation
+
+A shared Framer Motion animation controller (`r`, created via a custom `useAnimationController` hook) drives the burst overlay — a blurred magenta circle that flares and dissolves above the cauldron:
+
+```jsx
+<motion.div
+  animate={r}          // controller reference
+  initial={{ opacity: 0 }}
+  className="absolute bottom-32 w-32 h-32 bg-magenta/30
+             blur-2xl rounded-full pointer-events-none"
+/>
+```
+
+On each successful drop, `r.start()` sequences three keyframes:
+
+| Keyframe | `opacity` | `scale` | `y` |
+|----------|-----------|---------|-----|
+| 0        | 0         | 0.5     | 0   |
+| 1        | 0.8       | 2       | -100 |
+| 2        | 0         | 3       | -200 |
+
+The total animation lasts **2 seconds** and is not looped — it plays once per ingredient drop.
+
+## SVG Cauldron
+
+The cauldron is a static inline SVG (`viewBox="0 0 200 150"`) composed of two shapes:
+
+```jsx
+<svg viewBox="0 0 200 150"
+     className="w-full h-full text-slate-800
+                drop-shadow-[0_0_20px_rgba(255,43,214,0.3)]">
+
+  {/* Bowl body */}
+  <path d="M20 50 C20 150, 180 150, 180 50 Z" fill="currentColor" />
+
+  {/* Rim ellipse */}
+  <ellipse cx="100" cy="50" rx="80" ry="15"
+           fill="#13091f" stroke="#ff2bd6" strokeWidth="2" />
+
+  {/* Brew bubbles — only shown when e.length > 0 */}
+  <circle cx="80"  cy="45" r="5" fill="#ff2bd6" className="animate-pulse" />
+  <circle cx="120" cy="48" r="3" fill="#ff2bd6" className="animate-pulse"
+          style={{ animationDelay: "0.5s" }} />
+  <circle cx="100" cy="42" r="4" fill="#ff2bd6" className="animate-pulse"
+          style={{ animationDelay: "0.2s" }} />
+</svg>
+```
+
+The three pulsing `<circle>` elements are conditionally rendered only after at least one ingredient has been brewed (`e.length > 0`). Below the SVG, an ingredient counter is shown:
+
+```jsx
+<div className="absolute bottom-1/4 text-magenta font-mono text-xs text-center">
+  {e.length} items brewing
+</div>
+```
+
+## Section Layout & Classes
+
+The outer wrapper uses a centred column flex layout with a top border accent:
+
+```html
+<div class="relative py-24 flex flex-col items-center
+            border-t border-magenta/20">
+```
+
+Ingredient chips are grouped in a wrapping flex row:
+
+```html
+<div class="flex gap-4 mb-24 flex-wrap justify-center max-w-2xl">
+```
+
+The cauldron sits in a fixed-size relative container:
+
+```html
+<div class="relative w-64 h-48 flex items-end justify-center">
+```
+
+## Color Tokens Used
+
+| Token       | Usage |
+|-------------|-------|
+| `--magenta` | Chip border/text, cauldron rim stroke, bubble fill, counter text, section border |
+| `--deep-void` | Chip background |
+
+## Page Composition
+
+`Cauldron` is the second component rendered on the `/skills` route, immediately following `SkillConstellation`:
+
+```jsx
+// Skills page (main.js → ut())
+<SkillConstellation />
+<Cauldron />
+```
+
+<Tip>
+  Because `dragConstraints` are relative to the chip's rest position (not the viewport), an ingredient placed near the edge of the ingredient row may need a longer drag to reach the cauldron. Consider this intentional friction — the user must commit to the drop.
+</Tip>

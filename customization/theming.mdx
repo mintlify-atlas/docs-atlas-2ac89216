@@ -1,0 +1,363 @@
+---
+title: "Theming Digital Coven: Colors, Fonts, and Effects"
+sidebarTitle: "Theming"
+description: "Customize Digital Coven's dark palette, neon glow utilities, CRT overlay, custom scrollbar, and typography by editing CSS variables and Tailwind config values."
+---
+
+Digital Coven's entire visual identity is rooted in six CSS custom properties. Every color you see — from the background darkness to the electric neon accents — flows from this single `:root` block. Because Tailwind's theme classes reference these variables directly, a single value change in CSS cascades immediately through every component in the SPA without touching a single JSX file.
+
+## CSS Custom Properties
+
+All palette tokens live at the top of `assets/main.css` inside `:root`. These are the canonical source of truth for every color used in the project.
+
+```css
+:root {
+  --void: #08060d;
+  --deep-void: #13091f;
+  --electric-purple: #a855f7;
+  --neon-lime: #a3ff12;
+  --magenta: #ff2bd6;
+  --cyan: #22d3ee;
+}
+```
+
+| Variable | Hex | Role |
+|---|---|---|
+| `--void` | `#08060d` | Primary background — the darkest layer |
+| `--deep-void` | `#13091f` | Secondary background — cards, panels |
+| `--electric-purple` | `#a855f7` | Primary accent — borders, active states |
+| `--neon-lime` | `#a3ff12` | Secondary accent — nav logo, hero type |
+| `--magenta` | `#ff2bd6` | Danger / energy accent — cauldron, selection |
+| `--cyan` | `#22d3ee` | Hover / interactive accent — links, glows |
+
+### Changing a color
+
+Edit only the `:root` block. Because every Tailwind utility class and every custom utility references `var(--electric-purple)` (not the raw hex), the change propagates everywhere automatically.
+
+```css
+/* Before */
+:root {
+  --electric-purple: #a855f7;
+}
+
+/* After — swap to a cooler violet */
+:root {
+  --electric-purple: #7c3aed;
+}
+```
+
+<Note>
+  Do **not** hard-code hex values in component classes when a CSS variable already exists for that color. Using `shadow-[0_0_10px_var(--cyan)]` instead of `shadow-[0_0_10px_#22d3ee]` ensures the shadow respects theme changes automatically.
+</Note>
+
+---
+
+## Tailwind Color Token Classes
+
+Tailwind's config extends the default palette with all six Digital Coven tokens. This gives you the full Tailwind utility API — `text-`, `bg-`, `border-`, opacity modifiers, and hover variants — for every brand color.
+
+<CodeGroup>
+```html Text colors
+<h1 class="text-electric-purple">Electric Purple</h1>
+<h1 class="text-neon-lime">Neon Lime</h1>
+<h1 class="text-magenta">Magenta</h1>
+<h1 class="text-cyan">Cyan</h1>
+<p  class="text-void">Void (very dark, use on light backgrounds)</p>
+<p  class="text-deep-void">Deep Void</p>
+```
+
+```html Background colors
+<div class="bg-void">Base layer</div>
+<div class="bg-deep-void">Panel / card layer</div>
+<div class="bg-electric-purple/20">Tinted highlight — 20% opacity</div>
+<div class="bg-magenta/10">Subtle magenta wash</div>
+<div class="bg-cyan/50">Half-opacity cyan fill</div>
+```
+
+```html Border colors
+<div class="border border-electric-purple">Full opacity border</div>
+<div class="border border-electric-purple/30">30% opacity border</div>
+<div class="border border-neon-lime/50">Neon lime at 50%</div>
+<div class="border border-cyan/40">Cyan at 40%</div>
+```
+</CodeGroup>
+
+All six tokens support Tailwind's arbitrary opacity modifier syntax (e.g. `bg-magenta/30`) directly in JSX class names.
+
+---
+
+## Typography
+
+Digital Coven uses two Google Fonts families, imported at the very top of `assets/main.css`:
+
+```css
+@import "https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap";
+```
+
+These map to two Tailwind utility classes:
+
+| Class | Font Family | Used For |
+|---|---|---|
+| `font-display` | `Cinzel Decorative, serif` | Page headings, section titles, the nav logo |
+| `font-mono` | `JetBrains Mono, monospace` | Body copy, labels, code blocks, nav links |
+
+The `body` element also declares `font-family: JetBrains Mono, monospace` as the default, so all text is monospace unless a `font-display` class overrides it. All heading elements (`h1`–`h6`) and any element carrying `.font-display` also get `font-family: Cinzel Decorative, serif` via a global rule:
+
+```css
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: Cinzel Decorative, serif;
+}
+```
+
+### Swapping fonts
+
+<Steps>
+  <Step title="Choose a replacement from Google Fonts">
+    Browse [fonts.google.com](https://fonts.google.com) and copy the `@import` URL for your chosen family (e.g. `Uncial Antiqua` for display, `Fira Code` for mono).
+  </Step>
+  <Step title="Replace the @import at the top of main.css">
+    ```css
+    /* Replace this line */
+    @import "https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=JetBrains+Mono:ital,wght@0,400;0,700;1,400&display=swap";
+
+    /* With your new families */
+    @import "https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Fira+Code:wght@400;700&display=swap";
+    ```
+  </Step>
+  <Step title="Update the font-family declarations">
+    ```css
+    h1, h2, h3, h4, h5, h6, .font-display {
+      font-family: 'Uncial Antiqua', serif;
+    }
+
+    body {
+      font-family: 'Fira Code', monospace;
+    }
+
+    code, kbd, samp, pre {
+      font-family: 'Fira Code', monospace;
+    }
+    ```
+  </Step>
+  <Step title="Update the Tailwind config font keys">
+    In your `tailwind.config.js`, update the `fontFamily` extensions to match:
+    ```js
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Uncial Antiqua', 'serif'],
+          mono: ['Fira Code', 'monospace'],
+        },
+      },
+    }
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Glow Text Utilities
+
+Three custom `text-shadow` utility classes give headings the signature neon glow. They are defined in `assets/main.css` and can be added to any element alongside a matching text color class.
+
+```css
+.glow-text-purple {
+  text-shadow:
+    0 0 10px rgba(168, 85, 247, .8),
+    0 0 20px rgba(168, 85, 247, .4);
+}
+
+.glow-text-lime {
+  text-shadow:
+    0 0 10px rgba(163, 255, 18, .8),
+    0 0 20px rgba(163, 255, 18, .4);
+}
+
+.glow-text-cyan {
+  text-shadow:
+    0 0 10px rgba(34, 211, 238, .8),
+    0 0 20px rgba(34, 211, 238, .4);
+}
+```
+
+**Usage in JSX:**
+
+```jsx
+// About page heading
+<motion.h1 className="font-display text-5xl text-electric-purple glow-text-purple">
+  Origin Story
+</motion.h1>
+
+// Skills page heading
+<motion.h1 className="font-display text-5xl text-magenta drop-shadow-[0_0_15px_var(--magenta)]">
+  Skill Constellation
+</motion.h1>
+
+// Writing page heading
+<motion.h1 className="font-display text-5xl text-cyan glow-text-cyan">
+  The Scrolls
+</motion.h1>
+```
+
+<Tip>
+  Pair a `glow-text-*` class with a matching `drop-shadow-[0_0_Xpx_var(--color)]` Tailwind class on SVG icons or images to extend the glow to non-text elements without writing additional CSS.
+</Tip>
+
+### Adding a new glow color
+
+Add a new rule to `assets/main.css` using any CSS custom property:
+
+```css
+.glow-text-magenta {
+  text-shadow:
+    0 0 10px rgba(255, 43, 214, .8),
+    0 0 20px rgba(255, 43, 214, .4);
+}
+```
+
+---
+
+## CRT Overlay
+
+The `.crt-overlay` class adds a retro cathode-ray tube scanline effect via a `::before` pseudo-element. It renders two overlapping gradients: horizontal scanlines and vertical RGB channel separation, replicating the look of an old CRT monitor.
+
+```css
+.crt-overlay::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, .25) 50%),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 0, .06),
+      rgba(0, 255, 0, .02),
+      rgba(0, 0, 255, .06)
+    );
+  z-index: 2;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+}
+```
+
+**Requirements:** The host element must be `position: relative` (or any non-`static` position) to establish the stacking context the `::before` pseudo-element positions against.
+
+**Usage:**
+
+```jsx
+{/* Applied to the terminal test block on the Case Studies page */}
+<div className="bg-[#0a0a0a] border border-neon-lime/30 rounded p-6 crt-overlay relative font-mono text-sm text-neon-lime">
+  <div>$ jest --coverage</div>
+  <div className="text-slate-500">PASS src/components/Button.test.tsx</div>
+</div>
+```
+
+<Note>
+  The `pointer-events: none` on the `::before` ensures the overlay never blocks mouse interactions on content beneath it. The `z-index: 2` places the scanlines above content but you should manage your own stacking context carefully if child elements use high `z-index` values.
+</Note>
+
+### Adjusting scanline intensity
+
+The darkness of the horizontal scanlines is controlled by the second `rgba` alpha value in the first gradient. Increase it for a heavier CRT look:
+
+```css
+/* Subtle (default) */
+linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,.25) 50%)
+
+/* Heavy */
+linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,.5) 50%)
+```
+
+---
+
+## Custom Scrollbar
+
+The custom scrollbar matches the void palette with an electric-purple accent on the thumb border, making it part of the overall aesthetic rather than an OS default.
+
+```css
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--void);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--deep-void);
+  border: 1px solid var(--electric-purple);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--electric-purple);
+}
+```
+
+These rules target WebKit-based browsers (Chrome, Edge, Safari). The scrollbar becomes fully filled with `--electric-purple` on hover, giving a satisfying interactive neon flash. To change the accent color, update the `border` and `:hover` background to another CSS variable — for example, `var(--cyan)` for a cooler feel.
+
+<Note>
+  Firefox uses the `scrollbar-color` and `scrollbar-width` CSS properties instead of `::-webkit-scrollbar`. Add the following for cross-browser parity:
+  ```css
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--electric-purple) var(--void);
+  }
+  ```
+</Note>
+
+---
+
+## Selection Highlight
+
+When a visitor selects text anywhere on the page, the highlight color flips from the browser default blue to magenta on a void background. This is applied through Tailwind's `selection:` variant on the root layout container:
+
+```jsx
+// From the Layout component in assets/main.js
+<div className="min-h-screen text-slate-200 selection:bg-magenta selection:text-void flex flex-col">
+  {/* ... */}
+</div>
+```
+
+This compiles to the following CSS, which inherits down through all child elements:
+
+```css
+.selection\:bg-magenta *::selection {
+  background-color: rgb(255 43 214 / 1); /* --magenta */
+}
+
+.selection\:text-void *::selection {
+  color: rgb(8 6 13 / 1); /* --void */
+}
+```
+
+To change the selection color, swap `selection:bg-magenta` for another brand color (e.g. `selection:bg-cyan`) and pair it with an appropriately contrasting `selection:text-*` class.
+
+---
+
+## Header `mix-blend-difference`
+
+The site header uses `mix-blend-mode: difference` to blend visually with whatever content scrolls beneath it, rather than layering a solid or frosted background on top.
+
+```jsx
+// From the Layout component in assets/main.js
+<header className="fixed top-0 left-0 right-0 z-50 p-6 md:p-8
+                   flex justify-between items-center mix-blend-difference">
+  <Link to="/" className="font-display text-3xl font-bold tracking-widest
+                           text-neon-lime drop-shadow-[0_0_8px_var(--neon-lime)]
+                           hover:text-cyan hover:drop-shadow-[0_0_12px_var(--cyan)]
+                           transition-all duration-300">
+    DC
+  </Link>
+  <nav className="hidden md:flex gap-6 font-mono text-sm">
+    {/* nav links */}
+  </nav>
+</header>
+```
+
+`mix-blend-difference` subtracts each pixel's color from white (`#ffffff`), producing an inverted-color effect. On a dark `--void` background the nav text stays light and readable; over a light image or element it automatically inverts to dark, keeping text legible across all content without a backdrop.
+
+<Tip>
+  If you add a section with a very light or white background (e.g. a full-width image), the header text will invert to nearly black over that region — this is intentional and by design. Avoid `background-color: white` sections unless you want that inversion effect.
+</Tip>

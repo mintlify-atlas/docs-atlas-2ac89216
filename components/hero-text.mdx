@@ -1,0 +1,171 @@
+---
+title: "HeroText: Animated Name and Typewriter Tagline"
+sidebarTitle: "HeroText"
+description: "HeroText animates the portfolio name letter-by-letter with Framer Motion stagger, then types out a tagline with a blinking cursor using useEffect and setInterval."
+---
+
+`HeroText` is the primary identity block of the Digital Coven home page. It announces the portfolio owner's name — **Alex Morgan** — as a staggered cascade of animated letters, then types out the tagline `"Source Code, Summoned."` character by character. The result is a slow, ceremonial entrance that sets the occult-retro mood before any other content draws the eye.
+
+## Visual Role on the Home Page
+
+`HeroText` renders second in the home page stack, immediately after `SummoningCircle`. It is absolutely positioned above the circle graphic (`z-10`) and fills at least 60 % of the viewport height (`min-h-[60vh]`), keeping the name and tagline vertically centred on first load. Because `SummoningCircle` sits at `z-0` and is purely decorative, `HeroText` is effectively the first element a visitor can meaningfully read.
+
+**Home page render order:**
+
+| Position | Component |
+|---|---|
+| 1 | `SummoningCircle` |
+| **2** | **`HeroText`** |
+| 3 | `CardsOfFate` |
+| 4 | `TerminalStatus` |
+| 5 | `ProjectMarquee` |
+
+## Props
+
+`HeroText` accepts no props. All text content, animation parameters, and state are self-contained within the component.
+
+<Note>
+  Because the name and tagline are hard-coded strings (`"Alex Morgan"` and `"Source Code, Summoned."`), customising either value requires editing the component source directly.
+</Note>
+
+## Framer Motion Animations
+
+The component uses three distinct Framer Motion animation sequences.
+
+### 1 — Name heading reveal
+
+The outer `motion.h1` wrapper fades in with a blur and scale transition:
+
+```jsx
+// motion.h1 initial → animate
+initial={{ opacity: 0, filter: "blur(20px)", scale: 0.9 }}
+animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
+transition={{ duration: 1.5, ease: "easeOut" }}
+```
+
+### 2 — Per-letter stagger
+
+`"Alex Morgan"` is split with `.split("")` and each character is wrapped in a `motion.span`. Each letter starts below its resting position and fades in:
+
+```jsx
+// motion.span — applied to every character
+initial={{ opacity: 0, y: 20 }}
+animate={{ opacity: 1, y: 0 }}
+transition={{
+  delay: index * 0.1 + 0.5,   // 0.5 s base delay, +0.1 s per character
+  duration: 0.8,
+}}
+className="inline-block"
+```
+
+Spaces are rendered as the HTML entity `&nbsp;` (` `) to preserve spacing between first and last name.
+
+### 3 — Typewriter cursor blink
+
+A `motion.span` sits after the typed text and oscillates its opacity between `1` and `0` on infinite repeat:
+
+```jsx
+// motion.span — blinking cursor block
+animate={{ opacity: [1, 0] }}
+transition={{ repeat: Infinity, duration: 0.8 }}
+className="inline-block w-3 h-6 bg-neon-lime ml-1 align-middle"
+```
+
+## Typewriter Effect — `useEffect` + `setInterval`
+
+The tagline is rendered via two `useState` values:
+
+| State | Initial value | Purpose |
+|---|---|---|
+| `displayedText` (`o`) | `""` | The portion of the tagline currently visible |
+| `showGlitch` (`m`) | `false` | Triggers a CSS glitch class on the paragraph |
+
+A `setInterval` (100 ms tick) appends one character per tick until the full string `"Source Code, Summoned."` is displayed. Once complete, a second interval fires every **3 s** to toggle `showGlitch` to `true` for 200 ms, then back to `false`:
+
+```jsx
+useEffect(() => {
+  let t = 0;
+  const i = setInterval(() => {
+    if (t < tagline.length) {
+      setDisplayedText(tagline.slice(0, t + 1));
+      t++;
+    } else {
+      clearInterval(i);
+      setInterval(() => {
+        setShowGlitch(true);
+        setTimeout(() => setShowGlitch(false), 200);
+      }, 3000);
+    }
+  }, 100);
+  return () => clearInterval(i);
+}, []);
+```
+
+<Tip>
+  The glitch interval is created inside the `setInterval` callback and is never assigned to a variable, so it cannot be cleared on unmount. This is intentional for the portfolio's single-page, always-mounted home component, but would require a `useRef` guard in a component that unmounts.
+</Tip>
+
+## CSS Classes and Color Tokens
+
+### Name heading (`motion.h1`)
+
+```css
+font-display text-6xl md:text-8xl lg:text-9xl
+font-black
+text-transparent bg-clip-text
+bg-gradient-to-b from-white to-electric-purple
+glow-text-purple
+mb-6
+```
+
+The gradient runs top-to-bottom from **white** to the `--electric-purple` custom property, making the tops of letterforms bright and the bottoms glow violet. `glow-text-purple` is a custom utility that applies a purple `text-shadow`.
+
+### Tagline paragraph (`motion.p`)
+
+```css
+font-mono text-xl md:text-2xl
+text-neon-lime
+drop-shadow-[0_0_8px_var(--neon-lime)]
+```
+
+When `showGlitch` is `true`, the class `animate-glitch` is appended, triggering a keyframe animation defined in the project's global CSS.
+
+### Cursor block (`motion.span`)
+
+```css
+inline-block w-3 h-6
+bg-neon-lime
+ml-1 align-middle
+```
+
+### Container
+
+```css
+relative z-10
+flex flex-col items-center justify-center
+min-h-[60vh]
+text-center
+```
+
+## Interactive Behaviour
+
+`HeroText` has no click or hover handlers. The only interactive-feeling behaviour is the autonomous glitch pulse on the tagline, which fires on a 3-second timer after typing completes. The name letters and cursor blink continuously as long as the component is mounted.
+
+## Usage Example
+
+```jsx
+import { HeroText } from "../components/home/HeroText";
+
+// Used directly in the home page composite component:
+function HomePage() {
+  return (
+    <div className="relative w-full">
+      <SummoningCircle />
+      <HeroText />       {/* ← renders here */}
+      <CardsOfFate />
+      <TerminalStatus />
+      <ProjectMarquee />
+    </div>
+  );
+}
+```

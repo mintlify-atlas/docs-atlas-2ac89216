@@ -1,0 +1,131 @@
+---
+title: "SkillConstellation: Interactive SVG Skill Graph"
+sidebarTitle: "Skill Constellation"
+description: "SkillConstellation renders a graph of tech skills as SVG nodes with Framer Motion hover effects, showing connection lines and per-skill story tooltips."
+---
+
+`SkillConstellation` is the centrepiece of the `/skills` page. It visualises eight technology skills as floating circular nodes inside a fixed-height SVG container, connected by lines that represent relationships between tools. Hovering over any node illuminates its edges in cyan and reveals a personal tooltip — a group label and a short, flavour-text `story` — giving the graph both technical structure and personality.
+
+## Skill Node Data
+
+Each node in the constellation is defined by an object in the `l` array:
+
+```js
+const l = [
+  { id: "js",    label: "JavaScript",  group: "Languages",      x: 20, y: 20, story: "We have a love-hate relationship, mostly love." },
+  { id: "ts",    label: "TypeScript",  group: "Languages",      x: 35, y: 15, story: "The strict parent that keeps my code in line." },
+  { id: "react", label: "React",       group: "Front of House", x: 25, y: 40, story: "My primary spellcasting focus." },
+  { id: "css",   label: "Tailwind",    group: "Front of House", x: 10, y: 35, story: "Making things pretty without leaving the HTML." },
+  { id: "node",  label: "Node.js",     group: "Back of House",  x: 60, y: 25, story: "JavaScript, but in the dark." },
+  { id: "sql",   label: "PostgreSQL",  group: "Back of House",  x: 75, y: 30, story: "Organizing the chaos into neat little tables." },
+  { id: "debug", label: "Debugging",   group: "Detective Work", x: 50, y: 60, story: "Staring at the screen until the bug reveals itself." },
+  { id: "git",   label: "Git",         group: "Paperwork",      x: 80, y: 60, story: "Time travel, but with more merge conflicts." },
+]
+```
+
+| Field   | Type   | Description |
+|---------|--------|-------------|
+| `id`    | string | Unique identifier used to match edges |
+| `label` | string | Display name shown below the node dot |
+| `group` | string | Category shown in the tooltip header |
+| `x`     | number | Horizontal position as a percentage of container width |
+| `y`     | number | Vertical position as a percentage of container height |
+| `story` | string | Flavour text shown in the hover tooltip body |
+
+## Edge Connections
+
+Edges are defined in the `x` array as `[sourceId, targetId]` pairs. SVG `<line>` elements are drawn between the percentage positions of the two referenced nodes.
+
+```js
+const x = [
+  ["js", "ts"],
+  ["js", "react"],
+  ["react", "css"],
+  ["js", "node"],
+  ["node", "sql"],
+  ["debug", "js"],
+  ["git", "node"],
+]
+```
+
+<Note>
+  Edges are directional only in the data — the rendered lines are visually identical in both directions. The graph reads as an undirected network.
+</Note>
+
+## Hover Interaction
+
+The component tracks a single `hoveredId` string in React state (initialised to `null`). Hovering a node sets `hoveredId` to that node's `id`; hover-end resets it to `null`.
+
+**Node dot** — the 16 × 16 px circle changes appearance based on whether its `id` matches `hoveredId`:
+
+| State    | Background        | Border            | Box shadow |
+|----------|-------------------|-------------------|------------|
+| Default  | `bg-void`         | `border-electric-purple` | None |
+| Hovered  | `bg-cyan`         | `border-cyan`     | `0 0 15px var(--cyan)` |
+
+**SVG lines** — each line checks whether either of its endpoint IDs equals `hoveredId`:
+
+| State    | Stroke              | `strokeWidth` | `strokeOpacity` |
+|----------|---------------------|---------------|-----------------|
+| Default  | `var(--electric-purple)` | `1`      | `0.2`           |
+| Active   | `var(--cyan)`       | `2`           | `0.8`           |
+
+All line transitions are smoothed with `className="transition-all duration-300"`.
+
+**Framer Motion scale** — each node wrapper is a `motion.div` with `whileHover={{ scale: 1.2 }}`, providing a subtle grow on cursor entry.
+
+## Tooltip
+
+The tooltip is a `motion.div` positioned absolutely below the node dot. It animates between hidden and visible using `initial`/`animate`:
+
+```js
+// Tooltip motion values
+initial: { opacity: 0, y: 10 }
+animate: {
+  opacity: hoveredId === node.id ? 1 : 0,
+  y:       hoveredId === node.id ? 0 : 10,
+}
+```
+
+Tooltip layout (innermost to outer):
+1. **Group label** — `text-cyan text-[10px] uppercase mb-1`
+2. **Story text** — `text-slate-300 text-xs max-w-[200px] whitespace-normal`
+3. **Container** — `px-3 py-2 bg-void border border-cyan/50 rounded shadow-lg`
+
+## Container Classes
+
+```html
+<div class="relative w-full h-[500px] bg-deep-void/30
+            border border-electric-purple/20 rounded-xl
+            overflow-hidden mb-24">
+```
+
+The `overflow-hidden` clip prevents tooltips near the edges from breaking the card boundary. The `mb-24` bottom margin separates the constellation from the `Cauldron` section rendered below it on the skills page.
+
+## Color Tokens Used
+
+| Token               | Usage |
+|---------------------|-------|
+| `--deep-void`       | Container background (30% opacity) |
+| `--electric-purple` | Default edge stroke, node border, container border |
+| `--cyan`            | Hovered edge stroke, active node fill/border/glow, tooltip border |
+| `--void`            | Default node fill, tooltip background |
+
+## Page Composition
+
+On the `/skills` route, `SkillConstellation` is rendered inside `ut()` directly before `Cauldron`:
+
+```jsx
+// Skills page (main.js → ut())
+<motion.h1 className="font-display text-5xl md:text-7xl text-magenta ...">
+  Skill Constellation
+</motion.h1>
+<p className="font-mono text-slate-400">Languages I Speak (to Computers)...</p>
+
+<SkillConstellation />   {/* SVG graph */}
+<Cauldron />             {/* Drag-and-drop brew below */}
+```
+
+<Tip>
+  Because node positions are expressed as percentages, the constellation scales gracefully to any container width. Resize the viewport and the entire graph reflows without any JavaScript resize logic.
+</Tip>

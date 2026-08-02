@@ -1,0 +1,280 @@
+---
+title: "ArticleFormats: Torn and Folded Writing Cards"
+sidebarTitle: "Article Formats"
+description: "ArticleFormats provides two blog card styles, TornCard and FoldedCard, used in the Writing section to display articles with title, excerpt, date, and tag filters."
+---
+
+`ArticleFormats` exports two distinct article card components — `TornCard` and `FoldedCard` — used on the `/writing` page ("The Scrolls") to present blog posts and essays. The two styles carry different typographic and structural personalities: `TornCard` uses a raw left-border strip with a ragged right edge, while `FoldedCard` mimics a folded paper sheet with subtle crease lines and a 3-D perspective tilt. Both cards expand their excerpt on click using a Framer Motion `layout` animation.
+
+## Shared Props Interface
+
+Both components accept the same four props:
+
+```ts
+interface ArticleCardProps {
+  title:   string  // Article heading
+  excerpt: string  // Preview body text
+  date:    string  // Publication date string (e.g. "Oct 31, 2023")
+  tag:     string  // Category tag for filtering
+}
+```
+
+## Article Data
+
+The four articles are defined in `main.js` inside the `ft()` writing page function:
+
+```js
+const articles = [
+  {
+    type:    "torn",
+    title:   "Why Your `useEffect` is Haunting You",
+    excerpt: "A deep dive into the spectral realm of React dependency arrays and how to exorcise infinite loops before they consume your memory.",
+    date:    "Oct 31, 2023",
+    tag:     "Bug Reports",
+  },
+  {
+    type:    "folded",
+    title:   "The Alchemy of CSS Grid",
+    excerpt: "Transmuting chaotic div soup into perfectly aligned layouts using nothing but a few lines of grid incantations.",
+    date:    "Nov 15, 2023",
+    tag:     "Technical Writing",
+  },
+  {
+    type:    "torn",
+    title:   "Imposter Syndrome in the Coven",
+    excerpt: "Sometimes you feel like a wizard, sometimes you feel like you just copy-pasted a spell you don't understand. Both are valid.",
+    date:    "Dec 02, 2023",
+    tag:     "Reflections",
+  },
+  {
+    type:    "folded",
+    title:   "Explaining APIs to My Cat",
+    excerpt: "A completely non-technical breakdown of how computers talk to each other, featuring treats as data packets.",
+    date:    "Jan 10, 2024",
+    tag:     "Translated for Humans",
+  },
+]
+```
+
+The `type` field determines which component is rendered; `torn` maps to `TornCard` and `folded` maps to `FoldedCard`.
+
+---
+
+## TornCard (`T` / `Le`)
+
+`TornCard` evokes a page torn from a notebook: a dark background, a prominent left cyan border, and a repeating SVG tear pattern on the right edge.
+
+```jsx
+function TornCard({ title, excerpt, date, tag }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <motion.div
+      layout
+      onClick={() => setExpanded(!expanded)}
+      className="relative bg-[#111] border-l-2 border-cyan p-8
+                 cursor-none overflow-hidden group"
+    >
+      {/* Torn right edge using base64-encoded SVG pattern */}
+      <div className="absolute top-0 bottom-0 right-0 w-4
+                      bg-[url('data:image/svg+xml;base64,...')] opacity-50" />
+
+      {/* Header row: date + tag badge */}
+      <div className="text-cyan font-mono text-xs mb-4 flex justify-between">
+        <span>{date}</span>
+        <span className="border border-cyan/30 px-2 py-0.5">{tag}</span>
+      </div>
+
+      <h3 className="font-display text-2xl text-slate-200 mb-4
+                     group-hover:text-cyan transition-colors">
+        {title}
+      </h3>
+
+      {/* Excerpt — expands on click */}
+      <motion.div
+        animate={{ height: expanded ? "auto" : "60px", opacity: expanded ? 1 : 0.7 }}
+        className="font-mono text-sm text-slate-400 overflow-hidden"
+      >
+        {excerpt}
+        {expanded && (
+          <div className="mt-4 pt-4 border-t border-cyan/20 text-cyan/80">
+            [Read Full Text...]
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  )
+}
+```
+
+### TornCard Style Details
+
+| Element            | Classes |
+|--------------------|---------|
+| Container          | `bg-[#111] border-l-2 border-cyan p-8 overflow-hidden group` |
+| Torn edge strip    | `absolute top-0 bottom-0 right-0 w-4 opacity-50` with base64 SVG |
+| Date               | `text-cyan font-mono text-xs` |
+| Tag badge          | `border border-cyan/30 px-2 py-0.5` |
+| Title (default)    | `font-display text-2xl text-slate-200` |
+| Title (hover)      | `group-hover:text-cyan transition-colors` |
+| Excerpt            | `font-mono text-sm text-slate-400 overflow-hidden` |
+| "Read Full Text"   | `mt-4 pt-4 border-t border-cyan/20 text-cyan/80` |
+
+**Accent colour:** `--cyan`
+
+---
+
+## FoldedCard (`F` / `Ee`)
+
+`FoldedCard` simulates a sheet of paper folded into thirds. Horizontal crease lines divide the card, and on hover a subtle `rotateX` tilt creates a 3-D perspective lift. The tag badge here uses a filled background rather than a border outline.
+
+```jsx
+function FoldedCard({ title, excerpt, date, tag }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <motion.div
+      layout
+      onClick={() => setExpanded(!expanded)}
+      style={{ transformStyle: "preserve-3d" }}
+      whileHover={{ rotateX: expanded ? 0 : 5 }}
+      className="relative bg-deep-void border border-electric-purple/30 p-8
+                 cursor-none shadow-[0_0_15px_rgba(168,85,247,0.1)]"
+    >
+      {/* Crease lines at ⅓ and ⅔ card height */}
+      <div className="absolute top-1/3 left-0 right-0 h-[1px] bg-electric-purple/10" />
+      <div className="absolute top-2/3 left-0 right-0 h-[1px] bg-electric-purple/10" />
+
+      {/* Header row: date + tag badge */}
+      <div className="text-electric-purple font-mono text-xs mb-4 flex justify-between">
+        <span>{date}</span>
+        <span className="bg-electric-purple/10 px-2 py-0.5 rounded">{tag}</span>
+      </div>
+
+      <h3 className="font-display text-2xl text-slate-200 mb-4">{title}</h3>
+
+      {/* Excerpt — expands on click */}
+      <motion.div
+        animate={{ height: expanded ? "auto" : "60px", opacity: expanded ? 1 : 0.7 }}
+        className="font-mono text-sm text-slate-400 overflow-hidden"
+      >
+        {excerpt}
+        {expanded && (
+          <div className="mt-4 text-electric-purple italic">
+            "The magic is in the details..."
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  )
+}
+```
+
+### FoldedCard Style Details
+
+| Element            | Classes |
+|--------------------|---------|
+| Container          | `bg-deep-void border border-electric-purple/30 p-8` |
+| Box shadow         | `shadow-[0_0_15px_rgba(168,85,247,0.1)]` |
+| Crease lines       | `absolute h-[1px] bg-electric-purple/10` at `top-1/3` and `top-2/3` |
+| Date               | `text-electric-purple font-mono text-xs` |
+| Tag badge          | `bg-electric-purple/10 px-2 py-0.5 rounded` (filled, not outlined) |
+| Title              | `font-display text-2xl text-slate-200` |
+| Excerpt            | `font-mono text-sm text-slate-400 overflow-hidden` |
+| "Magic" footer     | `mt-4 text-electric-purple italic` |
+
+**Accent colour:** `--electric-purple`
+
+---
+
+## Click-to-Expand Animation
+
+Both cards use `motion.div` with `layout` on the outer wrapper, so the card's dimensions animate smoothly when the excerpt region changes height. The excerpt itself animates `height` and `opacity`:
+
+```js
+// Collapsed state
+animate={{ height: "60px", opacity: 0.7 }}
+
+// Expanded state
+animate={{ height: "auto", opacity: 1 }}
+```
+
+The `overflow-hidden` on the excerpt div ensures content is clipped during the height animation. When `expanded` is true, a card-specific footer element is revealed:
+
+- **TornCard:** `[Read Full Text...]` in `text-cyan/80`
+- **FoldedCard:** `"The magic is in the details..."` in `text-electric-purple italic`
+
+<Note>
+  `FoldedCard` disables the `rotateX` tilt when the card is expanded (`rotateX: expanded ? 0 : 5`). This prevents visual conflicts between the perspective transform and the height layout animation while the card is open.
+</Note>
+
+---
+
+## Tag Filter System
+
+The writing page maintains a `selectedTag` state (default `"All"`) that filters the articles array before rendering. The full tag list is defined at module scope in `main.js`:
+
+```js
+const tags = ["All", "Technical Writing", "Reflections", "Bug Reports", "Translated for Humans"]
+```
+
+Filter buttons:
+
+```jsx
+{tags.map(tag => (
+  <button
+    key={tag}
+    onClick={() => setSelectedTag(tag)}
+    className={`px-4 py-2 font-mono text-sm border transition-colors ${
+      selectedTag === tag
+        ? "border-cyan bg-cyan/10 text-cyan shadow-[0_0_10px_rgba(34,211,238,0.2)]"
+        : "border-slate-700 text-slate-400 hover:border-cyan/50"
+    }`}
+  >
+    {tag}
+  </button>
+))}
+```
+
+The active filter button gains:
+- `border-cyan bg-cyan/10 text-cyan` — cyan fill tint
+- `shadow-[0_0_10px_rgba(34,211,238,0.2)]` — subtle glow
+
+Filtered articles are rendered with a staggered fade entrance:
+
+```jsx
+{filtered.map((article, i) => (
+  <motion.div
+    key={i}
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: i * 0.1 }}
+  >
+    {article.type === "torn"
+      ? <TornCard   {...article} />
+      : <FoldedCard {...article} />}
+  </motion.div>
+))}
+```
+
+## Grid Layout
+
+The article grid is a responsive two-column layout:
+
+```html
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+```
+
+On mobile all cards stack in a single column; on `md:` and above they pair side by side. Because `TornCard` and `FoldedCard` mix within the same grid, the `layout` prop on each card ensures that expanding one card does not abruptly reflow its neighbour — Framer Motion smoothly animates any displaced siblings.
+
+## Color Tokens Summary
+
+| Token               | TornCard  | FoldedCard |
+|---------------------|-----------|------------|
+| `--cyan`            | ✓ (primary) | ✓ (filter button active state) |
+| `--electric-purple` | —         | ✓ (primary) |
+| `--deep-void`       | —         | ✓ (background) |
+
+<Tip>
+  The torn-edge effect on `TornCard` is a 4 px wide strip of a base64-encoded inline SVG pattern. If you ever need to extend the effect to a different colour or height, replace the `bg-[url(...)]` class with a new base64-encoded SVG that uses your target fill colour.
+</Tip>

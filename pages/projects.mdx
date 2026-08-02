@@ -1,0 +1,177 @@
+---
+title: "Projects Page: Grimoire of Repos Layout"
+sidebarTitle: "Projects"
+description: "The Projects page presents three featured repos as absolutely positioned ProjectTiles in hexagon, terminal, and runestone styles inside a 1200px stage."
+---
+
+The Projects page — titled **Grimoire of Repos** — treats each project like an artifact in a witch's collection. The three featured repositories are displayed as distinct styled "tiles" scattered across a fixed-height absolute-position stage, rather than in a conventional grid. On desktop, the tiles overlap and collide at intentional angles; on mobile, they fall into a vertical flex column.
+
+## Route
+
+```
+/projects
+```
+
+## Page Header
+
+```jsx
+<motion.h1
+  initial={{ opacity: 0, y: -20 }}
+  animate={{ opacity: 1, y: 0 }}
+  className="font-display text-5xl md:text-7xl text-neon-lime glow-text-lime mb-4"
+>
+  Grimoire of Repos
+</motion.h1>
+<p className="font-mono text-slate-400">
+  Suspiciously organized files...
+</p>
+```
+
+The title uses `text-neon-lime` with `glow-text-lime` drop-shadow. The header container uses `relative z-20 pointer-events-none` so it sits above the absolute-positioned tiles without intercepting their click/hover events.
+
+## Stage Layout
+
+The outer page container enforces a minimum height that matches the absolute tile positions:
+
+```html
+<div class="max-w-7xl mx-auto py-12 min-h-[1200px] relative">
+```
+
+The inner tile container switches from flex-column on mobile to absolute positioning on `md:` breakpoints:
+
+```html
+<div class="relative w-full h-full flex flex-col md:block items-center gap-12 mt-12">
+```
+
+- **Mobile (`flex flex-col`)**: tiles stack vertically with `gap-12` between them, centered.
+- **Desktop (`md:block`)**: the `flex` layout is overridden and tiles use their `md:absolute` position classes.
+
+## Project Data
+
+The page function `mt` defines the three projects as an array:
+
+```js
+const projects = [
+  {
+    type:      "hexagon",
+    title:     "Soul_Catcher_API",
+    desc:      "Harvests user data with suspicious efficiency.",
+    stack:     ["Node.js", "Express", "MongoDB", "Dark Magic"],
+    note:      "uses sample souls",
+    image:     "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?...",
+    className: "md:absolute md:top-10 md:left-10",
+  },
+  {
+    type:      "terminal",
+    title:     "Void_Protocol",
+    desc:      "A CLI tool that definitely doesn't delete your system32.",
+    stack:     ["Rust", "CLI", "WebAssembly"],
+    note:      "run at own risk",
+    image:     "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?...",
+    className: "md:absolute md:top-40 md:right-10",
+  },
+  {
+    type:      "runestone",
+    title:     "Hex_Weaver_UI",
+    desc:      "A component library for modern witches.",
+    stack:     ["React", "Tailwind", "Framer Motion"],
+    note:      "100% accessible",
+    image:     "https://images.unsplash.com/photo-1518770660439-4636190af475?...",
+    className: "md:absolute md:top-[400px] md:left-1/3",
+  },
+];
+```
+
+## Desktop Tile Positions
+
+The absolute positioning creates an intentionally scattered layout:
+
+| Project | Top | Horizontal |
+|---|---|---|
+| Soul_Catcher_API | `10px` from top | `10px` from left |
+| Void_Protocol | `160px` from top | `10px` from right |
+| Hex_Weaver_UI | `400px` from top | `left: 33.33%` (centered-right) |
+
+This staggered layout ensures the tiles overlap slightly at the `md:` breakpoint, creating a layered, non-grid feel.
+
+## ProjectTile Components
+
+Each entry in the array is conditionally routed to one of three components from `components/projects/ProjectTiles.js`:
+
+```jsx
+{projects.map((project, i) => (
+  <motion.div
+    key={i}
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ delay: i * 0.2, type: "spring" }}
+    className={project.className}
+  >
+    {project.type === "hexagon"  && <HexagonTile  {...project} />}
+    {project.type === "terminal" && <TerminalTile {...project} />}
+    {project.type === "runestone"&& <RunestoneTile {...project} />}
+  </motion.div>
+))}
+```
+
+Each tile animates in with a spring scale-up, staggered by `0.2s` per tile.
+
+<CardGroup cols={3}>
+  <Card title="HexagonTile" icon="hexagon" href="/components/project-tiles#hexagon">
+    **Soul_Catcher_API** — A hexagonal clip-path card with a glowing border and project image background. Stack tags are displayed as small pills inside the hex frame.
+  </Card>
+  <Card title="TerminalTile" icon="terminal" href="/components/project-tiles#terminal">
+    **Void_Protocol** — Styled as a terminal window with a title bar, `$` prompt prefix, and monospace font. The stack is rendered as simulated CLI output lines.
+  </Card>
+  <Card title="RunestoneTile" icon="gem" href="/components/project-tiles#runestone">
+    **Hex_Weaver_UI** — An ancient rune-stone aesthetic with rough border treatment and carved-text typography. The image is used as a texture overlay.
+  </Card>
+</CardGroup>
+
+## Project Details
+
+<CardGroup cols={1}>
+  <Card title="Soul_Catcher_API">
+    - **Type**: `hexagon`
+    - **Stack**: Node.js, Express, MongoDB, Dark Magic
+    - **Note**: `uses sample souls`
+    - **Desktop position**: top-left (`top: 10px, left: 10px`)
+  </Card>
+  <Card title="Void_Protocol">
+    - **Type**: `terminal`
+    - **Stack**: Rust, CLI, WebAssembly
+    - **Note**: `run at own risk`
+    - **Desktop position**: top-right (`top: 160px, right: 10px`)
+  </Card>
+  <Card title="Hex_Weaver_UI">
+    - **Type**: `runestone`
+    - **Stack**: React, Tailwind, Framer Motion
+    - **Note**: `100% accessible`
+    - **Desktop position**: mid-center (`top: 400px, left: 33%`)
+  </Card>
+</CardGroup>
+
+## Animation Details
+
+| Property | Value |
+|---|---|
+| Entrance `initial` | `opacity: 0`, `scale: 0.8` |
+| Entrance `animate` | `opacity: 1`, `scale: 1` |
+| Transition type | `spring` |
+| Stagger delay | `index × 0.2s` |
+
+<Note>
+  The `pointer-events-none` class on the page header prevents the title from blocking hover interactions on underlying tiles in the absolute layout. The tile container's `z-index` is implicitly lower than the header's `relative z-20`.
+</Note>
+
+## Component Source
+
+All three tile components are imported from a single file:
+
+```js
+import {
+  H as HexagonTile,
+  T as TerminalTile,
+  R as RunestoneTile,
+} from "../components/projects/ProjectTiles.js";
+```

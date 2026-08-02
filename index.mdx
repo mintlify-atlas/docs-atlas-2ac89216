@@ -1,20 +1,64 @@
 ---
-title: "Introduction"
-description: "Welcome to your project"
+title: "Digital Coven: Dark-Retro Developer Portfolio"
+sidebarTitle: "Home"
+description: "Digital Coven is an occult-themed React portfolio built with Framer Motion and Tailwind CSS. Explore its components, page structure, and customization options."
 ---
 
-Write a short description of your product here. What it does, who it's for, and what they can accomplish with it.
+Digital Coven is a dark-retro, occult-themed personal portfolio and developer showcase. Built with React, Framer Motion, and Tailwind CSS, it combines immersive visual effects — neon glows, CRT overlays, animated constellations, and drag-and-drop interactions — into a cohesive single-page application. This documentation covers every component, page, and customization option so you can understand, fork, and adapt the project to your own use.
 
-<Tip>
-  Ready to make this your own? Start by editing this page. Update your `docs.json` file to customize your site. Then fill out the [Quickstart](/quickstart) page.
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Introduction" icon="book-open" href="/introduction">
+    Learn what Digital Coven is, what technologies it uses, and what makes it unique.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Clone the repo, install dependencies, and run the dev server in minutes.
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/architecture/project-structure">
+    Understand the file layout, routing strategy, and design system foundations.
+  </Card>
+  <Card title="Components" icon="puzzle-piece" href="/components/layout">
+    Browse all UI components — from the animated background to the drag-and-drop Cauldron.
+  </Card>
+</CardGroup>
 
-<Card title="Quickstart" icon="rocket" href="/quickstart">
-  This card links to the quickstart page in your project.
-</Card>
-<Card title="Components" icon="puzzle-piece" href="https://mintlify.com/docs/components">
-  Add cards, callouts, steps, tabs, and more to design and structure your pages.
-</Card>
-<Card title="Settings" icon="gear" href="https://mintlify.com/docs/organize/settings">
-  Set your site name, branding, and navigation in the `docs.json` file.
-</Card>
+## What's Inside
+
+Digital Coven ships as a fully self-contained Vite + React SPA. Every page is a distinct route with its own animated entry and exit, and every visual effect is implemented in pure React with Framer Motion — no external UI library required.
+
+<CardGroup cols={3}>
+  <Card title="Home Page" icon="house" href="/pages/home">
+    Summoning Circle, HeroText typewriter, Cards of Fate, and ProjectMarquee.
+  </Card>
+  <Card title="Skills" icon="star" href="/pages/skills">
+    Interactive SkillConstellation graph and drag-and-drop Cauldron.
+  </Card>
+  <Card title="Projects" icon="folder-open" href="/pages/projects">
+    Three-style ProjectTiles layout: Hexagon, Terminal, and Runestone cards.
+  </Card>
+  <Card title="About" icon="user" href="/pages/about">
+    Animated vertical TimelineMilestones and the ThingsINotice section.
+  </Card>
+  <Card title="Writing" icon="pen-nib" href="/pages/writing">
+    Filterable articles with TornCard and FoldedCard display formats.
+  </Card>
+  <Card title="Contact" icon="envelope" href="/pages/contact">
+    Animated form with floating labels, a guestbook, and social links.
+  </Card>
+</CardGroup>
+
+## Key Technologies
+
+<Steps>
+  <Step title="React + Vite">
+    The app is scaffolded with Vite for fast HMR. React Router v6 handles client-side hash-based routing.
+  </Step>
+  <Step title="Framer Motion">
+    Every page transition, hover effect, scroll animation, and drag interaction is powered by Framer Motion — including `AnimatePresence` for smooth route changes.
+  </Step>
+  <Step title="Tailwind CSS">
+    A custom Tailwind config defines the coven color palette (`--void`, `--electric-purple`, `--neon-lime`, `--magenta`, `--cyan`) and typography scales using Cinzel Decorative and JetBrains Mono.
+  </Step>
+  <Step title="Hash Routing">
+    A small inline script in `index.html` redirects bare pathnames to hash routes (`/#/`) so the static build works on any hosting provider without server-side configuration.
+  </Step>
+</Steps>

@@ -1,0 +1,187 @@
+---
+title: "CustomCursor: Replacing the Browser Default Cursor"
+sidebarTitle: "Custom Cursor"
+description: "CustomCursor tracks pointer position and renders an animated SVG/div cursor with Framer Motion, replacing the native browser cursor across the entire site."
+---
+
+`CustomCursor` replaces the browser's native arrow with a bespoke crosshair-style cursor that reacts to both position and hover context. It consists of two visual layers that move together: a circular ring with crosshair lines that snaps to the pointer with a short tween, and a brief trail of star-shaped sparkle particles that scatter behind fast movements. The component is mounted at the very top of the `AppShell` tree so it renders above every other element, including the site header.
+
+## Hiding the Native Cursor
+
+Before `CustomCursor` can render convincingly, the browser's built-in cursor must be suppressed. This is done globally in `main.css` using two rules:
+
+```css
+body {
+  cursor: none;
+}
+
+a,
+button,
+input,
+textarea,
+select,
+[role="button"] {
+  cursor: none !important;
+}
+```
+
+The `body` rule hides the cursor everywhere by default. The second rule uses `!important` to override the browser's own UA stylesheet, which forces `cursor: pointer` on interactive elements like `<a>` and `<button>`. Without it, the native hand cursor would reappear whenever the user hovers over a link.
+
+<Note>
+If you add a new interactive element that isn't covered by the selector list — for example a `<label>` styled as a button — append its selector to the second rule to keep the custom cursor consistent.
+</Note>
+
+## How CustomCursor Works
+
+The component is a function component that uses three pieces of state and a single `mousemove` listener to drive its animation:
+
+```jsx
+function CustomCursor() {
+  const [pos, setPos]       = useState({ x: 0, y: 0 });
+  const [trail, setTrail]   = useState([]);
+  const [isHover, setIsHover] = useState(false);
+
+  useEffect(() => {
+    let trailId = 0;
+
+    const handleMove = (e) => {
+      // 1. Update cursor position
+      setPos({ x: e.clientX, y: e.clientY });
+
+      // 2. Emit a sparkle particle ~40% of the time
+      if (Math.random() > 0.6) {
+        setTrail((prev) => [
+          ...prev.slice(-15),
+          { x: e.clientX, y: e.clientY, id: trailId++ },
+        ]);
+      }
+
+      // 3. Detect if the pointer is over an interactive element
+      const target = e.target.closest('a, button, [role="button"], input, textarea, select');
+      setIsHover(!!target);
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    return () => window.removeEventListener('mousemove', handleMove);
+  }, []);
+
+  // ...render
+}
+```
+
+The trail array is capped at the 15 most recent particles (`.slice(-15)`) to keep the DOM small. The sparkle emission probability of ~40% (`Math.random() > 0.6`) ensures particles appear during fast movement but not every frame.
+
+## Cursor Anatomy
+
+The rendered output is a single `pointer-events-none fixed inset-0 z-[9999] overflow-hidden` container with two children: the animated particle trail and the main cursor body.
+
+### Particle Trail
+
+Each trail particle is a tiny SVG 8-pointed star (`M12 2L15 9L22 12...`) rendered in `text-neon-lime` with a neon lime drop shadow. It enters at `opacity: 0.8, scale: 1` and animates out to `opacity: 0, scale: 0, rotate: 90` over 0.8 seconds with an `easeOut` curve. The particles are managed by `AnimatePresence` so each one plays its exit animation before being removed from the DOM.
+
+```jsx
+<AnimatePresence>
+  {trail.map((particle) => (
+    <motion.div
+      key={particle.id}
+      initial={{ opacity: 0.8, scale: 1, rotate: 0 }}
+      animate={{ opacity: 0, scale: 0, rotate: 90 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.8, ease: 'easeOut' }}
+      className="absolute h-2 w-2 -ml-1 -mt-1 text-neon-lime drop-shadow-[0_0_5px_var(--neon-lime)]"
+      style={{ left: particle.x, top: particle.y }}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full">
+        <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" />
+      </svg>
+    </motion.div>
+  ))}
+</AnimatePresence>
+```
+
+### Main Cursor Body
+
+The main cursor is a 32×32 `motion.div` centred on the pointer via `-ml-4 -mt-4` negative margins. It moves with a `tween` animation using `backOut` easing at `0.15s` duration — fast enough to feel immediate but with a tiny elastic overshoot that gives it a physical quality. The `animate` object drives both position and hover-state transforms:
+
+```jsx
+<motion.div
+  className="absolute -ml-4 -mt-4 flex h-8 w-8 items-center justify-center"
+  animate={{
+    x: pos.x,
+    y: pos.y,
+    scale: isHover ? 1.5 : 1,
+    rotate: isHover ? 45 : 0,
+  }}
+  transition={{ type: 'tween', ease: 'backOut', duration: 0.15 }}
+>
+```
+
+Inside the cursor body, four elements compose the crosshair ring:
+
+| Element | Default | On Hover |
+|---|---|---|
+| Circular ring (border) | `border-electric-purple` + `shadow-[0_0_15px_var(--electric-purple)]` | `border-cyan` + `shadow-[0_0_15px_var(--cyan)]` |
+| Centre dot | `bg-magenta` + `shadow-[0_0_8px_var(--magenta)]` | `bg-neon-lime` + `shadow-[0_0_8px_var(--neon-lime)]` |
+| Vertical line | `bg-electric-purple/50` | `bg-cyan/50` |
+| Horizontal line | `bg-electric-purple/50` | `bg-cyan/50` |
+
+```jsx
+{/* Outer ring */}
+<div className={`absolute inset-0 rounded-full border-2 transition-colors duration-300
+  ${isHover
+    ? 'border-cyan shadow-[0_0_15px_var(--cyan)]'
+    : 'border-electric-purple shadow-[0_0_15px_var(--electric-purple)]'
+  }`}
+/>
+
+{/* Centre dot */}
+<div className={`h-1.5 w-1.5 rounded-full transition-colors duration-300
+  ${isHover
+    ? 'bg-neon-lime shadow-[0_0_8px_var(--neon-lime)]'
+    : 'bg-magenta shadow-[0_0_8px_var(--magenta)]'
+  }`}
+/>
+
+{/* Vertical crosshair */}
+<div className={`absolute h-full w-[1px] transition-colors duration-300
+  ${isHover ? 'bg-cyan/50' : 'bg-electric-purple/50'}`}
+/>
+
+{/* Horizontal crosshair */}
+<div className={`absolute h-[1px] w-full transition-colors duration-300
+  ${isHover ? 'bg-cyan/50' : 'bg-electric-purple/50'}`}
+/>
+```
+
+When `isHover` is `true`, the cursor also scales to `1.5×` and rotates `45°` — turning the crosshair into a diagonal `×` shape that visually signals "this is clickable."
+
+## AnimatePresence Mode
+
+The `AnimatePresence` wrapping the particle trail does not use a `mode` prop explicitly in `CustomCursor` itself — it uses the default `"sync"` mode, meaning multiple particles can enter and exit simultaneously. This is correct behaviour for a trail: particles should fade out independently without waiting for each other. The `mode="wait"` used for page transitions belongs to the `AnimatePresence` in `AppShell`, not here.
+
+## Placement in the Component Tree
+
+`CustomCursor` is the **first child** rendered by `AppShell`, before `BackgroundAtmosphere`, the header, and the page content:
+
+```jsx
+function AppShell({ children }) {
+  return (
+    <div className="min-h-screen ...">
+      <CustomCursor />          {/* z-[9999] — always on top */}
+      <BackgroundAtmosphere />  {/* z-[-1]   — always behind */}
+      <header className="z-50 ...">...</header>
+      <AnimatePresence>
+        <motion.main className="z-10 ...">
+          {children}
+        </motion.main>
+      </AnimatePresence>
+    </div>
+  );
+}
+```
+
+Its `z-[9999]` stacking ensures it floats above the header (`z-50`), page content (`z-10`), and any modals or overlays that might appear within routes.
+
+<Tip>
+On touch devices, `mousemove` events do not fire, so `CustomCursor` renders but the cursor element stays at `{x: 0, y: 0}` in the top-left corner. Since `cursor: none` is not meaningful on touch screens, this is harmless — the cursor `div` is `pointer-events-none` and invisible at the corner. If you want to suppress it entirely on touch devices, add a check for `window.matchMedia('(pointer: coarse)').matches` inside the `useEffect` and return early before adding the event listener.
+</Tip>

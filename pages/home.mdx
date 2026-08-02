@@ -1,0 +1,125 @@
+---
+title: "Home Page: Summoning Circle, Hero, and Project Cards"
+sidebarTitle: "Home"
+description: "The Digital Coven home page composes five animated components into a single immersive landing: SummoningCircle, HeroText, CardsOfFate, TerminalStatus, and ProjectMarquee."
+---
+
+The Home page is the ritual entry point of Digital Coven — the first thing visitors encounter when they navigate to `/`. It layers five self-contained animated components into a single full-bleed canvas. There is no scroll-triggered pagination or routing logic here; the page is an atmospheric composition designed to establish the dark-retro, occult aesthetic before any other content is reached.
+
+## Route
+
+```
+/
+```
+
+## Component Composition
+
+The page function `ct` renders a single container `div` with the class `relative w-full`, which allows absolutely positioned child components (like `SummoningCircle`) to overflow and fill the viewport without disrupting document flow.
+
+```jsx
+function ct() {
+  return (
+    <div className="relative w-full">
+      <SummoningCircle />
+      <HeroText />
+      <CardsOfFate />
+      <TerminalStatus />
+      <ProjectMarquee />
+    </div>
+  );
+}
+```
+
+The five components render top-to-bottom in stacking context order, with the `SummoningCircle` acting as a decorative background layer beneath the hero content.
+
+<CardGroup cols={2}>
+  <Card title="SummoningCircle" icon="circle-dashed" href="/components/summoning-circle">
+    An animated SVG ritual circle that acts as a full-bleed decorative background. Rotates continuously and pulses glowing ring segments on load.
+  </Card>
+  <Card title="HeroText" icon="sparkles" href="/components/hero-text">
+    Renders the site owner's name and tagline with staggered Framer Motion entrance animations. Name: **Alex Morgan**. Tagline: **Source Code, Summoned.**
+  </Card>
+  <Card title="CardsOfFate" icon="rectangle-history" href="/components/cards-of-fate">
+    A horizontal row of interactive tarot-style cards. Each card flips on hover to reveal a featured skill or project stat on its reverse face.
+  </Card>
+  <Card title="TerminalStatus" icon="terminal" href="/components/terminal-status">
+    A simulated terminal readout that types live status lines with a blinking cursor, giving the impression of a system boot sequence.
+  </Card>
+</CardGroup>
+
+<Card title="ProjectMarquee" icon="scroll" href="/components/project-marquee">
+  A horizontally scrolling ticker that continuously loops abbreviated project names and tech tags across the bottom of the landing section.
+</Card>
+
+## Layout
+
+The outer wrapper uses `relative w-full` so the `SummoningCircle` SVG can be positioned absolutely behind the hero content. The `HeroText`, `CardsOfFate`, and `TerminalStatus` sit in normal flow above it. `ProjectMarquee` sits at the bottom of the stacking order as a footer-adjacent marquee strip.
+
+```html
+<div class="relative w-full">
+  <!-- SummoningCircle: absolute, full-bleed behind -->
+  <!-- HeroText: z-indexed above circle -->
+  <!-- CardsOfFate: card row beneath hero -->
+  <!-- TerminalStatus: terminal block beneath cards -->
+  <!-- ProjectMarquee: scrolling strip at bottom -->
+</div>
+```
+
+## Hero Data
+
+The `HeroText` component receives its display values as static props defined at the call site:
+
+```js
+name:    "Alex Morgan"
+tagline: "Source Code, Summoned."
+```
+
+<Note>
+  The name and tagline are not pulled from a CMS or config file — they are hardcoded inside the `HeroText` component invocation in `main.js`. To update them, edit the component props directly.
+</Note>
+
+## Animation Overview
+
+Every component on this page uses **Framer Motion** for its entrance and idle animations:
+
+| Component | Animation |
+|---|---|
+| `SummoningCircle` | Continuous slow rotation + opacity pulse |
+| `HeroText` | Staggered `y` slide-up + `opacity` fade-in on mount |
+| `CardsOfFate` | 3D `rotateY` flip on hover per card |
+| `TerminalStatus` | Character-by-character typing sequence with blinking cursor |
+| `ProjectMarquee` | Infinite horizontal `x` translate loop |
+
+<Tip>
+  The `CardsOfFate` component is imported from `components/home/CardsOfFate.js` and exported as `le` in the minified bundle. The `SummoningCircle` is `me`, `HeroText` is `ue`, `TerminalStatus` is `pe`, and `ProjectMarquee` is `xe`.
+</Tip>
+
+## Global Layout Wrapper
+
+The home page (like every route) is wrapped in the `Layout` component (`it`), which injects:
+
+- `CustomCursor` — a custom SVG cursor that replaces the OS pointer
+- `BackgroundAtmosphere` — subtle animated noise/scanline overlay applied to the whole viewport
+- A `fixed` header with the `DC` logotype and nav links
+- `AnimatePresence` with `mode="wait"` wrapping the `<main>` so route transitions blur-and-fade between pages
+
+```jsx
+// Shared page wrapper (simplified)
+<div className="min-h-screen text-slate-200 selection:bg-magenta selection:text-void flex flex-col">
+  <CustomCursor />
+  <BackgroundAtmosphere />
+  <header className="fixed top-0 left-0 right-0 z-50 p-6 md:p-8 ...">
+    <Link to="/" className="font-display text-3xl font-bold tracking-widest text-neon-lime ...">
+      DC
+    </Link>
+    <nav className="hidden md:flex gap-6 font-mono text-sm">
+      {/* /about, /projects, /skills, /writing, /case-studies, /contact */}
+    </nav>
+  </header>
+  <AnimatePresence mode="wait">
+    <motion.main ...>{children}</motion.main>
+  </AnimatePresence>
+</div>
+```
+
+The `main` element applies an entrance/exit animation of `opacity`, `filter: blur(10px)`, and `y: 20` on each route change, with a `0.5s easeInOut` transition.

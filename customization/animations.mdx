@@ -1,0 +1,554 @@
+---
+title: "Animations in Digital Coven with Framer Motion"
+sidebarTitle: "Animations"
+description: "All motion in Digital Coven is driven by Framer Motion. This guide covers page transitions, scroll-triggered reveals, hover effects, drag interactions, and the glitch animation."
+---
+
+Every piece of motion in Digital Coven — from the blurred page fade when navigating between routes to the spring-physics timeline cards, the draggable cauldron ingredients, and the letter-by-letter hero title — is implemented with Framer Motion. This guide walks through each animation pattern in the codebase, showing the exact configuration used, and finishes with a practical walkthrough for adding your own animated component.
+
+## Page Transitions
+
+Route changes are handled by wrapping the router outlet in `AnimatePresence` (from Framer Motion) and animating a `motion.main` element. The animation blurs and lifts the outgoing page up while the incoming page fades in from below, creating a smooth, portal-like transition.
+
+```jsx
+// Layout component — assets/main.js
+import { AnimatePresence, motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
+
+function Layout({ children }) {
+  const location = useLocation();
+
+  return (
+    <div className="min-h-screen text-slate-200 selection:bg-magenta selection:text-void flex flex-col">
+      <AnimatePresence mode="wait">
+        <motion.main
+          key={location.pathname}
+          initial={{ opacity: 0, filter: 'blur(10px)', y: 20 }}
+          animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+          exit={{ opacity: 0, filter: 'blur(10px)', y: -20 }}
+          transition={{ duration: 0.5, ease: 'easeInOut' }}
+          className="flex-grow pt-32 px-6 md:px-12 lg:px-24 pb-24 relative z-10"
+        >
+          {children}
+        </motion.main>
+      </AnimatePresence>
+    </div>
+  );
+}
+```
+
+**Key decisions:**
+
+- `mode="wait"` on `AnimatePresence` ensures the exiting page fully completes its exit animation before the entering page begins its entrance. This prevents both pages being visible simultaneously.
+- `key={location.pathname}` triggers a re-mount (and therefore a fresh animation cycle) every time the route changes.
+- `filter: 'blur(10px)'` on both `initial` and `exit` creates the characteristic "summoning through a veil" feel on every navigation.
+
+<Note>
+  `AnimatePresence` must wrap the component that changes (here, `motion.main` keyed by pathname). If you move `AnimatePresence` inside the changing component itself, exit animations will never fire because the wrapper is already unmounted.
+</Note>
+
+---
+
+## Scroll-Triggered Reveals
+
+The About page timeline uses `whileInView` to animate each milestone card in from the side as it enters the viewport. The direction of entry depends on whether the card is on the left or right side of the central axis.
+
+```jsx
+// components/about/TimelineMilestones.js (rendered in main.js dt() function)
+const milestones = [
+  { component: <PersonalMilestone />, align: 'left',  year: '2018' },
+  { component: <StudyMilestone />,    align: 'right', year: '2020' },
+  { component: <FirstJobMilestone />, align: 'left',  year: '2021' },
+  // ...
+];
+
+milestones.map((item, index) => (
+  <div
+    key={index}
+    className={`flex items-center w-full ${
+      item.align === 'left' ? 'justify-start' : 'justify-end'
+    } relative`}
+  >
+    <div className={`w-1/2 ${
+      item.align === 'left'
+        ? 'pr-12 flex justify-end'
+        : 'pl-12 flex justify-start'
+    }`}>
+      <motion.div
+        initial={{ opacity: 0, x: item.align === 'left' ? -50 : 50 }}
+        whileInView={{ opacity: 1, x: 0 }}
+        viewport={{ once: true, margin: '-100px' }}
+        transition={{ duration: 0.6, type: 'spring' }}
+        className="relative"
+      >
+        {item.component}
+      </motion.div>
+    </div>
+  </div>
+))
+```
+
+**Configuration breakdown:**
+
+| Property | Value | Effect |
+|---|---|---|
+| `initial.x` | `-50` or `50` | Starts 50px off-screen left or right |
+| `whileInView.x` | `0` | Slides to natural position |
+| `viewport.once` | `true` | Only fires the first time the element enters view |
+| `viewport.margin` | `'-100px'` | Triggers 100px *before* the element reaches the viewport edge, so cards are already in motion when fully visible |
+| `transition.type` | `'spring'` | Physics-based easing for a natural overshoot feel |
+
+<Tip>
+  The `margin: '-100px'` offset is negative, which means the intersection is detected 100px *before* the element would otherwise cross the viewport boundary. Positive values delay the trigger until the element has already entered by that amount. Tune this to control how early or late reveals fire.
+</Tip>
+
+---
+
+## Hover Effects
+
+### SkillConstellation node scale
+
+Each skill node in the constellation SVG layout uses `whileHover` to scale up when the pointer enters it. The connected SVG lines simultaneously change stroke color and opacity through a CSS `transition-all` class, driven by a React state toggle rather than Framer Motion.
+
+```jsx
+// components/skills/SkillConstellation.js
+const [activeNode, setActiveNode] = React.useState(null);
+
+// SVG connector lines — color driven by active state
+edges.map(([sourceId, targetId], index) => {
+  const source = nodes.find(n => n.id === sourceId);
+  const target = nodes.find(n => n.id === targetId);
+  const isActive = activeNode === sourceId || activeNode === targetId;
+
+  return (
+    <motion.line
+      key={index}
+      x1={`${source.x}%`} y1={`${source.y}%`}
+      x2={`${target.x}%`} y2={`${target.y}%`}
+      stroke={isActive ? 'var(--cyan)' : 'var(--electric-purple)'}
+      strokeWidth={isActive ? 2 : 1}
+      strokeOpacity={isActive ? 0.8 : 0.2}
+      className="transition-all duration-300"
+    />
+  );
+});
+
+// Skill node — Framer Motion hover scale
+<motion.div
+  className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-none"
+  style={{ left: `${node.x}%`, top: `${node.y}%` }}
+  onHoverStart={() => setActiveNode(node.id)}
+  onHoverEnd={() => setActiveNode(null)}
+  whileHover={{ scale: 1.2 }}
+>
+  <div className={`w-4 h-4 rounded-full border-2 transition-colors duration-300 ${
+    activeNode === node.id
+      ? 'bg-cyan border-cyan shadow-[0_0_15px_var(--cyan)]'
+      : 'bg-void border-electric-purple'
+  }`} />
+  {/* Tooltip */}
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{
+      opacity: activeNode === node.id ? 1 : 0,
+      y: activeNode === node.id ? 0 : 10
+    }}
+    className="mt-2 px-3 py-2 bg-void border border-cyan/50 text-slate-300 text-xs rounded shadow-lg"
+  >
+    <div className="text-cyan mb-1 text-[10px] uppercase">{node.group}</div>
+    {node.story}
+  </motion.div>
+</motion.div>
+```
+
+### Glitch animation
+
+The hero subtitle `<p>` element applies a pure CSS glitch animation triggered by a React state timer. Every 3 seconds, the `animate-glitch` class is added for 200ms, causing the text to jitter with skew transforms.
+
+```css
+/* assets/main.css */
+@keyframes glitch {
+  2%,  64% { transform: translate(2px) skew(0); }
+  4%,  60% { transform: translate(-2px) skew(0); }
+  62%      { transform: translate(0) skew(5deg); }
+}
+
+.hover\:animate-glitch:hover {
+  animation: glitch 1s linear infinite;
+}
+```
+
+```jsx
+// components/home/HeroText.js
+const [isGlitching, setIsGlitching] = React.useState(false);
+
+React.useEffect(() => {
+  const interval = setInterval(() => {
+    setIsGlitching(true);
+    setTimeout(() => setIsGlitching(false), 200);
+  }, 3000);
+  return () => clearInterval(interval);
+}, []);
+
+<motion.p
+  className={`font-mono text-xl md:text-2xl text-neon-lime
+              drop-shadow-[0_0_8px_var(--neon-lime)]
+              ${isGlitching ? 'animate-glitch' : ''}`}
+>
+  {typedText}
+  {/* blinking cursor */}
+  <motion.span
+    animate={{ opacity: [1, 0] }}
+    transition={{ repeat: Infinity, duration: 0.8 }}
+    className="inline-block w-3 h-6 bg-neon-lime ml-1 align-middle"
+  />
+</motion.p>
+```
+
+You can also apply `hover:animate-glitch` directly in Tailwind to any element to trigger the glitch continuously on mouse-over without any JavaScript:
+
+```jsx
+<span className="font-mono text-electric-purple hover:animate-glitch cursor-none">
+  hover me
+</span>
+```
+
+---
+
+## Drag Interactions
+
+The Cauldron component on the Skills page lets visitors drag ingredient tokens (e.g. `React`, `TypeScript`, `Coffee`) toward a drop zone. Framer Motion's `drag` prop handles pointer tracking, constraint clamping, and the drag-end callback where drop-zone detection logic runs.
+
+```jsx
+// components/skills/Cauldron.js
+const ingredients = ['React', 'TypeScript', 'Coffee', 'CSS', 'Tears'];
+const [dropped, setDropped] = React.useState([]);
+
+const handleDragEnd = (event, info, ingredient) => {
+  // Drop zone: bottom quarter of the screen, centered 300px around the midpoint
+  const inDropZone =
+    info.point.y > window.innerHeight - 300 &&
+    info.point.x > window.innerWidth / 2 - 150 &&
+    info.point.x < window.innerWidth / 2 + 150;
+
+  if (inDropZone && !dropped.includes(ingredient)) {
+    setDropped([...dropped, ingredient]);
+    // Trigger the brew animation via animationControls.start(...)
+  }
+};
+
+{ingredients.map((ingredient) =>
+  !dropped.includes(ingredient) && (
+    <motion.div
+      key={ingredient}
+      drag
+      dragConstraints={{ left: -300, right: 300, top: -300, bottom: 300 }}
+      onDragEnd={(event, info) => handleDragEnd(event, info, ingredient)}
+      whileDrag={{ scale: 1.1, zIndex: 50 }}
+      className="px-4 py-2 bg-deep-void border border-magenta
+                 text-magenta font-mono text-sm rounded cursor-none
+                 shadow-[0_0_10px_rgba(255,43,214,0.2)]"
+    >
+      {ingredient}
+    </motion.div>
+  )
+)}
+```
+
+**Prop reference:**
+
+| Prop | Value | Effect |
+|---|---|---|
+| `drag` | `true` | Enables drag in all directions |
+| `dragConstraints` | `{ left: -300, right: 300, top: -300, bottom: 300 }` | Limits how far the element can be dragged from its origin (in pixels) |
+| `onDragEnd` | `(event, info) => ...` | Fires when the pointer is released; `info.point` gives viewport coordinates |
+| `whileDrag` | `{ scale: 1.1, zIndex: 50 }` | Scales the token up and lifts it above other elements while held |
+
+<Note>
+  `dragConstraints` values are relative to the element's **natural position**, not the viewport. Setting `left: -300` means the element cannot be dragged more than 300px to the left of where it originally rendered. If you need viewport-relative constraints, pass a `ref` to a container element instead: `dragConstraints={containerRef}`.
+</Note>
+
+---
+
+## `AnimatePresence` Usage
+
+`AnimatePresence` is used in two contexts across the project.
+
+**Route transitions (Layout component):**
+
+```jsx
+// Wraps the entire routed page tree
+<AnimatePresence mode="wait">
+  <motion.main key={location.pathname} /* ... exit/enter animation */ >
+    {children}
+  </motion.main>
+</AnimatePresence>
+```
+
+**Conditional component mount/unmount (Writing page filter):**
+
+When the filter changes on the Writing page, articles are removed from the DOM. Wrapping the list in `AnimatePresence` allows exit animations to play before unmount:
+
+```jsx
+// Writing page — ft() function in assets/main.js
+const filtered = articles.filter(a => activeTag === 'All' || a.tag === activeTag);
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+  {filtered.map((article, index) => (
+    <motion.div
+      key={index}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+    >
+      {article.type === 'torn'
+        ? <TornArticle {...article} />
+        : <FoldedArticle {...article} />
+      }
+    </motion.div>
+  ))}
+</div>
+```
+
+<Tip>
+  When using `AnimatePresence` with a list, give each child a stable `key` prop tied to the item's identity (not its index). Index-based keys cause React to consider all items "the same element" when the list is reordered, preventing exit animations from firing on the items that were removed.
+</Tip>
+
+---
+
+## Scroll Progress Bar
+
+The Case Studies page uses `useScroll` and `useTransform` to create a sticky reading-progress indicator on the left side of the layout and a floating ambient glow div that travels down the page as the user scrolls.
+
+```jsx
+// Case Studies page — ht() function in assets/main.js
+import { useScroll, useTransform, motion } from 'framer-motion';
+
+function CaseStudies() {
+  const containerRef = React.useRef(null);
+
+  // Bind scroll tracking to the container element
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start start', 'end end'],
+  });
+
+  // Map scroll progress (0–1) to a CSS percentage string
+  const progressHeight = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
+  const ambientTop    = useTransform(scrollYProgress, [0, 1], ['0%', '100%']);
+
+  return (
+    <div ref={containerRef} className="max-w-6xl mx-auto py-12 relative flex gap-12">
+
+      {/* Sticky progress bar — left column */}
+      <div className="hidden lg:block w-16 relative">
+        <div className="sticky top-32 h-[60vh] flex flex-col items-center">
+          {/* Track line */}
+          <div className="absolute top-0 bottom-0 w-[1px] bg-slate-800" />
+          {/* Filled progress bar */}
+          <motion.div
+            className="absolute top-0 w-[2px] bg-electric-purple
+                       shadow-[0_0_10px_var(--electric-purple)]"
+            style={{ height: progressHeight }}
+          />
+        </div>
+      </div>
+
+      {/* Content column with floating ambient glow */}
+      <div className="flex-1 relative">
+        <motion.div
+          className="absolute -left-32 w-64 h-64 bg-electric-purple/10
+                     blur-[100px] rounded-full pointer-events-none"
+          style={{ top: ambientTop }}
+        />
+        {/* Page sections... */}
+      </div>
+
+    </div>
+  );
+}
+```
+
+`useTransform` maps the normalized scroll value (a MotionValue between `0` and `1`) to a new output range. Both `progressHeight` and `ambientTop` are themselves MotionValues, so assigning them to `style` props creates a performant, JS-driven binding that bypasses React re-renders entirely.
+
+---
+
+## Hero Text Stagger Animation
+
+The hero heading in `HeroText.js` splits the display name into individual characters and animates each one in with a staggered delay. The outer `motion.h1` handles a simultaneous blur-and-scale entrance while each `motion.span` letter arrives from below.
+
+```jsx
+// components/home/HeroText.js
+const name = 'Alex Morgan';
+
+<motion.h1
+  className="font-display text-6xl md:text-8xl lg:text-9xl font-black
+             text-transparent bg-clip-text bg-gradient-to-b
+             from-white to-electric-purple glow-text-purple mb-6"
+  initial={{ opacity: 0, filter: 'blur(20px)', scale: 0.9 }}
+  animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
+  transition={{ duration: 1.5, ease: 'easeOut' }}
+>
+  {name.split('').map((char, index) => (
+    <motion.span
+      key={index}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        delay: index * 0.1 + 0.5,  // 0.1s between each letter, starts at 0.5s
+        duration: 0.8,
+      }}
+      className="inline-block"
+    >
+      {char === ' ' ? '\u00A0' : char}
+    </motion.span>
+  ))}
+</motion.h1>
+```
+
+**How the timing works:**
+
+- Letter `0` starts at `0.5s` delay
+- Letter `1` starts at `0.6s` delay
+- Letter `10` ("n" in "Morgan") starts at `1.5s` delay
+- The outer `motion.h1` blur/scale plays over `1.5s`, so it finishes just as the last letter lands
+
+Spaces are replaced with a non-breaking space (`\u00A0`) because `inline-block` collapses whitespace characters to nothing, which would collapse the space between "Alex" and "Morgan".
+
+---
+
+## `useMotionValue` and `useTransform` for Linked Animations
+
+`useMotionValue` creates a MotionValue that can be driven programmatically (e.g. from `onMouseMove`) or read from a scroll source. `useTransform` maps that value to a new range. This pattern powers the ambient glow tracking in Case Studies and can be extended for custom pointer-following effects.
+
+```jsx
+import { useMotionValue, useTransform, motion } from 'framer-motion';
+
+function PointerGlow() {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Map pointer position to a subtle parallax offset
+  const glowX = useTransform(mouseX, [0, window.innerWidth],  [-20, 20]);
+  const glowY = useTransform(mouseY, [0, window.innerHeight], [-20, 20]);
+
+  const handleMouseMove = (e) => {
+    mouseX.set(e.clientX);
+    mouseY.set(e.clientY);
+  };
+
+  return (
+    <div onMouseMove={handleMouseMove} className="relative min-h-screen">
+      <motion.div
+        className="absolute w-64 h-64 bg-electric-purple/10 blur-[100px]
+                   rounded-full pointer-events-none"
+        style={{ x: glowX, y: glowY }}
+      />
+    </div>
+  );
+}
+```
+
+Because MotionValues bypass React's render cycle, even rapid pointer-move events update the DOM directly through Framer Motion's internal scheduler — there are no re-renders and no performance concerns.
+
+---
+
+## Adding a New Animated Component
+
+This walkthrough shows how to integrate a new entrance animation into any Digital Coven page component, following the same patterns used throughout the project.
+
+<Steps>
+  <Step title="Import motion from the proxy bundle">
+    All components import from the local Vite-bundled proxy rather than directly from `framer-motion`:
+    ```jsx
+    import { m as motion } from '../../assets/proxy.js';
+    // or, from a top-level component:
+    import { m as motion } from './assets/proxy.js';
+    ```
+    The alias `m` is the treeshakeable Framer Motion export. Use `motion.div`, `motion.span`, `motion.h1`, etc.
+  </Step>
+
+  <Step title="Choose your animation pattern">
+    Pick the pattern that fits your component's trigger:
+
+    | Trigger | Pattern |
+    |---|---|
+    | Component mounts | `initial` + `animate` |
+    | Element scrolls into view | `initial` + `whileInView` + `viewport` |
+    | User hovers | `whileHover` |
+    | User drags | `drag` + `dragConstraints` + `whileDrag` |
+    | Parent drives child | `variants` + `AnimatePresence` |
+  </Step>
+
+  <Step title="Write your motion component">
+    Here's an example card that slides up and fades in on scroll:
+    ```jsx
+    function SpellCard({ title, description, index }) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{
+            duration: 0.5,
+            delay: index * 0.15,   // stagger each card by 150ms
+            type: 'spring',
+            stiffness: 100,
+          }}
+          whileHover={{ scale: 1.02 }}
+          className="bg-deep-void border border-electric-purple/30 p-6
+                     shadow-[0_0_15px_rgba(168,85,247,0.1)] rounded-lg"
+        >
+          <h3 className="font-display text-xl text-electric-purple mb-2">
+            {title}
+          </h3>
+          <p className="font-mono text-sm text-slate-400">{description}</p>
+        </motion.div>
+      );
+    }
+    ```
+  </Step>
+
+  <Step title="Wrap list renders in AnimatePresence if items can be removed">
+    If items are conditionally shown or filtered (like the Writing page):
+    ```jsx
+    import { AnimatePresence } from 'framer-motion';
+
+    <AnimatePresence>
+      {visibleCards.map((card, i) => (
+        <SpellCard key={card.id} {...card} index={i} />
+      ))}
+    </AnimatePresence>
+    ```
+    Add an `exit` prop to `motion.div` inside `SpellCard` to animate removal:
+    ```jsx
+    exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+    ```
+  </Step>
+
+  <Step title="Test at reduced motion preference">
+    Framer Motion respects `prefers-reduced-motion` automatically when you use the `useReducedMotion` hook. Wrap sensitive animations to respect accessibility settings:
+    ```jsx
+    import { useReducedMotion } from 'framer-motion';
+
+    function SpellCard({ title, description, index }) {
+      const shouldReduce = useReducedMotion();
+
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: shouldReduce ? 0 : 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: shouldReduce ? 0 : 0.5 }}
+        >
+          {/* ... */}
+        </motion.div>
+      );
+    }
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  Digital Coven uses `cursor: none` globally and implements a custom cursor component (`CustomCursor.js`). If your new animated component uses `whileHover`, make sure any `cursor-` classes are set to `cursor-none` to avoid the OS cursor briefly reappearing over the component.
+</Note>
