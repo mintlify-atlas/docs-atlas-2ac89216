@@ -1,7 +1,7 @@
 ---
-title: "Animations in Digital Coven with Framer Motion"
+title: "Framer Motion Animations in the Digital Coven SPA"
 sidebarTitle: "Animations"
-description: "All motion in Digital Coven is driven by Framer Motion. This guide covers page transitions, scroll-triggered reveals, hover effects, drag interactions, and the glitch animation."
+description: "All Digital Coven motion uses Framer Motion: page transitions, scroll reveals, hover effects, drag interactions, AnimatePresence, and glitch keyframes."
 ---
 
 Every piece of motion in Digital Coven — from the blurred page fade when navigating between routes to the spring-physics timeline cards, the draggable cauldron ingredients, and the letter-by-letter hero title — is implemented with Framer Motion. This guide walks through each animation pattern in the codebase, showing the exact configuration used, and finishes with a practical walkthrough for adding your own animated component.
@@ -302,8 +302,8 @@ const filtered = articles.filter(a => activeTag === 'All' || a.tag === activeTag
       transition={{ delay: index * 0.1 }}
     >
       {article.type === 'torn'
-        ? <TornArticle {...article} />
-        : <FoldedArticle {...article} />
+        ? <TornCard {...article} />
+        : <FoldedCard {...article} />
       }
     </motion.div>
   ))}

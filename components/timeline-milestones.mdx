@@ -1,7 +1,7 @@
 ---
 title: "TimelineMilestones: Animated Vertical Career Timeline"
 sidebarTitle: "Timeline Milestones"
-description: "TimelineMilestones renders alternating left/right milestone cards along a vertical cyan gradient line, each animating into view with Framer Motion's whileInView."
+description: "TimelineMilestones renders alternating milestone cards along a vertical cyan gradient line, each sliding into view with Framer Motion's whileInView."
 ---
 
 `TimelineMilestones` constructs the narrative spine of the `/about` page. Five milestone cards representing distinct career chapters are laid out alternately left and right of a vertical cyan gradient line. As the user scrolls down, each card slides in from its side using Framer Motion's `whileInView` — giving the timeline a reveal-as-you-scroll feel that suits the portfolio's dark-retro aesthetic. Year labels float beside each card connector dot as understated navigation anchors.
@@ -10,15 +10,15 @@ description: "TimelineMilestones renders alternating left/right milestone cards 
 
 Five named milestone components are exported from `TimelineMilestones.js`. Each encapsulates the visual design for one career chapter:
 
-| Export | Internal name | Year     | Theme / style |
-|--------|---------------|----------|---------------|
-| `fe`   | `P`           | 2018     | Polaroid-style photo card, rotated, healthcare imagery |
-| `he`   | `S`           | 2020     | Yellow sticky-note card, retail & merchandising list |
-| `ge`   | `F`           | 2021     | Slate card with 3-D perspective tilt, "The Curiosity Spark" |
-| `ye`   | `a`           | 2022     | Dark terminal error card, "Transitioning to Code" |
-| `ve`   | `b`           | Present  | Neon-lime recipe card, "Developer Potion" |
+| Export name | main.js alias | Year     | Theme / style |
+|-------------|---------------|----------|---------------|
+| `P`         | `fe`          | 2018     | Polaroid-style photo card, rotated, healthcare imagery |
+| `S`         | `he`          | 2020     | Yellow sticky-note card, retail & merchandising list |
+| `F`         | `ge`          | 2021     | Slate card with 3-D perspective tilt, "The Curiosity Spark" |
+| `a`         | `ye`          | 2022     | Dark terminal error card, "Transitioning to Code" |
+| `b`         | `ve`          | Present  | Neon-lime recipe card, "Developer Potion" |
 
-### Past Life: Healthcare (`fe` / `P`)
+### Past Life: Healthcare (`P` / `fe`)
 
 ```jsx
 <motion.div
@@ -36,7 +36,7 @@ Five named milestone components are exported from `TimelineMilestones.js`. Each 
 </motion.div>
 ```
 
-### Retail & Merchandising (`he` / `S`)
+### Retail & Merchandising (`S` / `he`)
 
 ```jsx
 <motion.div
@@ -53,7 +53,7 @@ Five named milestone components are exported from `TimelineMilestones.js`. Each 
 </motion.div>
 ```
 
-### The Curiosity Spark (`ge` / `F`)
+### The Curiosity Spark (`F` / `ge`)
 
 ```jsx
 <motion.div
@@ -69,7 +69,7 @@ Five named milestone components are exported from `TimelineMilestones.js`. Each 
 </motion.div>
 ```
 
-### Transitioning to Code (`ye` / `a`)
+### Transitioning to Code (`a` / `ye`)
 
 ```jsx
 <motion.div
@@ -87,7 +87,7 @@ Five named milestone components are exported from `TimelineMilestones.js`. Each 
 </motion.div>
 ```
 
-### Developer Potion (`ve` / `b`) — Present
+### Developer Potion (`b` / `ve`) — Present
 
 ```jsx
 <motion.div

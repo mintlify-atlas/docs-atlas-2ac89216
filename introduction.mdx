@@ -41,7 +41,7 @@ Navigation is declared as a static array in the layout and rendered as a fixed h
   All colour values are CSS custom properties consumed by Tailwind utility classes. No hex codes are hardcoded in components.
 </Note>
 
-The design system revolves around five neon accent colours layered over near-black backgrounds:
+The design system revolves around two near-black background tokens and four neon accent colours:
 
 - **`--void`** — the primary background, a near-black that reads as infinite depth
 - **`--deep-void`** — used for radial gradients in the animated background layer
@@ -68,7 +68,7 @@ The browser's default cursor is replaced by a custom `<CustomCursor />` componen
 
 ### Summoning Circle
 
-`<SummoningCircle />` renders a multi-ring SVG mandala in `electric-purple` at the centre of the home page. The entire group rotates one full revolution every 60 seconds via Framer Motion's `animate={{ rotate: 360 }}` with `repeat: Infinity`. The mandala includes two dashed outer rings, an inner ring, a pentagram path, a hexagon, and six evenly-spaced occult glyphs positioned at 60° intervals.
+`<SummoningCircle />` renders a multi-ring SVG mandala in `electric-purple` at the centre of the home page. The entire group rotates one full revolution every 60 seconds via Framer Motion's `animate={{ rotate: 360 }}` with `repeat: Infinity`. The mandala includes one dashed outer ring (`strokeDasharray="10 5"`), one solid outer ring, an inner ring, a pentagram path, a hexagon, and six evenly-spaced occult glyphs positioned at 60° intervals.
 
 ### Hero Typewriter
 
